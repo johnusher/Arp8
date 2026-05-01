@@ -509,11 +509,19 @@ function refreshSongDisplay() {
 refreshSongDisplay();
 
 function cycleSong(delta) {
-  const wasPlaying = state.songPlaying;
-  if (wasPlaying) stopSong();
   state.songIndex = ((state.songIndex + delta) % SONGS.length + SONGS.length) % SONGS.length;
   refreshSongDisplay();
-  if (wasPlaying) startSong();
+  if (state.songPlaying) {
+    // Hot-swap: stop the in-flight player & key, but keep the scheduler running
+    // so the transition is instant. startSong() rebuilds everything from the
+    // new song's first scene.
+    songPlayer.stop();
+    restoreKeyAfterSong();
+    midi.panic();
+    state.songPlaying = false;
+    songBtn.classList.remove("armed");
+    startSong();
+  }
 }
 $("song-prev").addEventListener("click", () => cycleSong(-1));
 $("song-next").addEventListener("click", () => cycleSong(+1));
@@ -534,11 +542,10 @@ const songPlayer = new SongPlayer({
           : "—";
   },
   onEnd: () => {
-    songBtn.classList.remove("armed");
-    state.songPlaying = false;
-    restoreKeyAfterSong();
-    stopSched();
-    $("np-chord").textContent = "—";
+    // Songs loop forever until the user stops them or cycles to another.
+    // A song never auto-advances to the next one in the catalogue.
+    if (!state.songPlaying) return;
+    songPlayer.play(SONGS[state.songIndex]);
   },
 });
 

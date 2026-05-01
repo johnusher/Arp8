@@ -208,6 +208,31 @@ export const tests = [
     assert.equal(verseB.chaos, 0.06);
   }],
 
+  ["looping pattern (host calls play() again from onEnd) replays the song indefinitely", () => {
+    const clock = new VirtualClock();
+    const sceneNames = [];
+    let loops = 0;
+    const p = new SongPlayer({
+      song: TINES_AND_TIME,
+      getChord: () => [60],
+      applyScene: (params) => sceneNames.push(params.name),
+      schedule: (cb, ms) => clock.setTimeout(cb, ms),
+      cancel: (id) => clock.clearTimeout(id),
+      onEnd: () => {
+        // Host-side loop: re-trigger play on each end (matches app.js behavior).
+        loops++;
+        if (loops < 3) p.play();
+      },
+    });
+    p.play();
+    clock.advance(p.totalMs() * 4); // long enough for 3+ loops
+    // After 3 loops, we expect the first scene name to appear at least 3 times.
+    const firstScene = TINES_AND_TIME.scenes[0].name;
+    const firstSceneFires = sceneNames.filter(n => n === firstScene).length;
+    assert.ok(firstSceneFires >= 3, `expected ≥3 loops, first scene fired ${firstSceneFires} times`);
+    assert.equal(loops, 3, "exactly 3 onEnd events before host stops looping");
+  }],
+
   ["stop() cancels all pending scenes", () => {
     const clock = new VirtualClock();
     const fired = [];
