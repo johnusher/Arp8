@@ -8,8 +8,9 @@ const RATES_OK = ["1/4","1/4T","1/8","1/8T","1/16","1/16T","1/32"];
 const PATTERNS_OK = ["up","down","updown","downup","converge","diverge","random","randomOther","randomOnce","played","chord"];
 
 export const tests = [
-  ["catalogue has 8 distinct songs with required metadata", () => {
-    assert.equal(SONGS.length, 8, `expected 8 songs, got ${SONGS.length}`);
+  ["catalogue has the expected song count + 8 originals + classical canon", () => {
+    // 8 originals + 20 classical = 28
+    assert.equal(SONGS.length, 28, `expected 28 songs, got ${SONGS.length}`);
     const titles = new Set();
     for (const s of SONGS) {
       assert.ok(s.title,     `song missing title`);
@@ -20,7 +21,14 @@ export const tests = [
       assert.ok(Array.isArray(s.scenes) && s.scenes.length > 0, `${s.title} has no scenes`);
       titles.add(s.title);
     }
-    assert.equal(titles.size, 8, "songs must have distinct titles");
+    assert.equal(titles.size, 28, "songs must have distinct titles");
+    // First 8 are the originals (in known order)
+    assert.equal(SONGS[0].title, "Tines & Time");
+    assert.equal(SONGS[7].title, "Choral");
+    // Position 8 onwards are classical pieces (subtitle includes composer · year)
+    for (let i = 8; i < SONGS.length; i++) {
+      assert.match(SONGS[i].subtitle, /·\s+\d{4}\s+·/, `${SONGS[i].title} subtitle missing year`);
+    }
   }],
 
   ["every scene in every song has valid pattern + rate (when set)", () => {

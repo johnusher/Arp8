@@ -330,6 +330,169 @@ export const CHORAL = {
   ],
 };
 
+// ──────────────────────────────────────────────────────────────────────────
+// CLASSICAL CATALOGUE — 20 famous pieces transposed to a key the phase8's
+// default C-major install can play (major pieces → C major, minor pieces →
+// A minor; both use only the white keys / C-major scale notes).
+//
+// Each piece is defined as a metadata row with composer, BPM, mode, arpeggio
+// pattern, rate, and the *chord-degree* progression (0=I, 1=ii, ... 6=vii°).
+// The `classicalToSong` generator below expands each row into a full song
+// with intro / build passes / outro and inherited CC settings, picking enough
+// loops to land each piece between 75 and 150 seconds.
+// ──────────────────────────────────────────────────────────────────────────
+
+// Chord degrees per piece. Verified against published harmonic analyses where
+// possible (Pachelbel I-V-vi-iii-IV-I-IV-V; Moonlight broken-chord arpeggios
+// over i-VI-iv-V; Bach inventions and minuets reduced to their diatonic
+// skeleton; etc.). Some Romantic/Impressionist pieces use chromatic harmony
+// the engine can't reproduce — those are reduced to the closest diatonic
+// outline that still evokes the source.
+const CLASSICAL = [
+  // major-key pieces ────────────────────────────────────────────────────
+  { title: "Pachelbel — Canon",          composer: "Pachelbel",  year: 1680,
+    bpm: 60,  mode: "major", pattern: "up",     rate: "1/8",
+    chords: [0,4,5,2,3,0,3,4] },                                  // I V vi iii IV I IV V
+
+  { title: "Bach — Air on the G String", composer: "J.S. Bach",  year: 1730,
+    bpm: 56,  mode: "major", pattern: "up",     rate: "1/8",
+    chords: [0,5,1,4,0,3,4,0] },                                  // I vi ii V I IV V I
+
+  { title: "Bach — Jesu, Joy of Man's Desiring", composer: "J.S. Bach", year: 1723,
+    bpm: 78,  mode: "major", pattern: "up",     rate: "1/8",
+    chords: [0,1,2,3,4,0,5,1,4,0] },                              // I ii iii IV V I vi ii V I
+
+  { title: "Bach — Cello Suite No. 1 Prelude", composer: "J.S. Bach", year: 1720,
+    bpm: 84,  mode: "major", pattern: "up",     rate: "1/16",
+    chords: [0,3,4,0,5,3,4,0] },                                  // I IV V I vi IV V I
+
+  { title: "Bach — Minuet in G",         composer: "J.S. Bach",  year: 1725,
+    bpm: 110, mode: "major", pattern: "up",     rate: "1/8",
+    chords: [0,4,0,3,4,0,4,0,3,4,0] },                            // I V I IV V I // V I IV V I
+
+  { title: "Bach — Invention No. 1 in C",composer: "J.S. Bach",  year: 1723,
+    bpm: 92,  mode: "major", pattern: "up",     rate: "1/16",
+    chords: [0,4,0,3,0,4,5,1,4,0] },                              // I V I IV I V vi ii V I
+
+  { title: "Bach — Sheep May Safely Graze", composer: "J.S. Bach", year: 1713,
+    bpm: 60,  mode: "major", pattern: "up",     rate: "1/8",
+    chords: [0,4,5,3,0,4,0,3,4,0] },
+
+  { title: "Handel — Hallelujah Chorus", composer: "Handel",     year: 1741,
+    bpm: 92,  mode: "major", pattern: "chord",  rate: "1/4",
+    chords: [0,4,0,4,5,2,3,0,3,4,0] },                            // chord-stab style
+
+  { title: "Mozart — Eine kleine Nachtmusik", composer: "Mozart",year: 1787,
+    bpm: 130, mode: "major", pattern: "up",     rate: "1/8",
+    chords: [0,4,0,4,0,3,4,0,4,0] },
+
+  { title: "Mozart — Sonata K. 545",     composer: "Mozart",     year: 1788,
+    bpm: 96,  mode: "major", pattern: "up",     rate: "1/16",
+    chords: [0,4,0,3,0,4,0,5,4,0] },                              // I V I IV I V I vi V I
+
+  { title: "Vivaldi — Spring (Allegro)", composer: "Vivaldi",    year: 1723,
+    bpm: 116, mode: "major", pattern: "up",     rate: "1/16",
+    chords: [0,4,0,4,0,3,4,0,1,4,0] },
+
+  { title: "Beethoven — Ode to Joy",     composer: "Beethoven",  year: 1824,
+    bpm: 108, mode: "major", pattern: "played", rate: "1/4",
+    chords: [0,0,3,0,4,0,3,0,0,4,0] },                            // melody-style
+
+  { title: "Schubert — Ave Maria",       composer: "Schubert",   year: 1825,
+    bpm: 60,  mode: "major", pattern: "up",     rate: "1/8",
+    chords: [0,3,4,0,5,1,4,0] },
+
+  { title: "Satie — Gymnopédie No. 1",   composer: "Satie",      year: 1888,
+    bpm: 70,  mode: "major", pattern: "up",     rate: "1/8",
+    chords: [0,3,0,4,0,3,1,4,0] },                                // I IV-pedal feel
+
+  { title: "Debussy — Clair de Lune",    composer: "Debussy",    year: 1905,
+    bpm: 50,  mode: "major", pattern: "up",     rate: "1/16",
+    chords: [0,4,0,3,5,1,4,0] },
+
+  // minor-key pieces ────────────────────────────────────────────────────
+  { title: "Handel — Sarabande in D minor", composer: "Handel",  year: 1733,
+    bpm: 56,  mode: "minor", pattern: "chord",  rate: "1/4",
+    chords: [0,4,0,3,4,0,6,2,3,4,0] },
+
+  { title: "Beethoven — Moonlight Sonata 1st mvt", composer: "Beethoven", year: 1801,
+    bpm: 60,  mode: "minor", pattern: "up",     rate: "1/8T",
+    chords: [0,5,3,4,0,3,4,0] },                                  // i VI iv V i iv V i
+
+  { title: "Beethoven — Für Elise",      composer: "Beethoven",  year: 1810,
+    bpm: 84,  mode: "minor", pattern: "up",     rate: "1/8",
+    chords: [0,4,0,4,0,5,2,6,0,4,0] },
+
+  { title: "Beethoven — Symphony No. 5", composer: "Beethoven",  year: 1808,
+    bpm: 96,  mode: "minor", pattern: "down",   rate: "1/16",
+    chords: [0,0,5,4,0,0,5,4,0] },                                // the iconic motif
+
+  { title: "Albinoni — Adagio in G minor", composer: "Albinoni / Giazotto", year: 1958,
+    bpm: 50,  mode: "minor", pattern: "chord",  rate: "1/4",
+    chords: [0,5,2,6,0,4,0,3,4,0] },                              // i VI III VII i V i iv V i
+];
+
+// Generator: turn a CLASSICAL row into a full song with intro / build passes /
+// outro. Picks enough loops to keep total duration in the [75s, 150s] range.
+function classicalToSong(p) {
+  const key      = p.mode === "minor" ? "A" : "C";
+  const cycleLen = p.chords.length;
+  const introBars = 2, outroBars = 4;
+
+  // pick loops such that intro + cycle*loops + outro lands ~75-150 sec
+  const beatsPerSec = p.bpm / 60;
+  const totalBars = (sec) => sec * beatsPerSec / 4;
+  let loops = 2;
+  while (loops < 6) {
+    const bars = introBars + cycleLen * loops + outroBars;
+    if (bars >= totalBars(75)) break;
+    loops++;
+  }
+
+  const baseGate = p.pattern === "chord" ? 0.95 : 0.55;
+  const baseScene = {
+    pattern: p.pattern, rate: p.rate, octaves: 1, gate: baseGate, swing: 0,
+    cc: { air: 35, modDepth: 8, modRate: 30, envelope: 80 }, chaos: 0,
+  };
+
+  const scenes = [];
+  // Intro: first chord, lower velocity, half octaves
+  scenes.push({ name: "intro", bars: introBars, chord: p.chords[0], bpm: p.bpm,
+    ...baseScene, velocity: 65, cc: { ...baseScene.cc, velocity: 65 } });
+
+  // Pass 1..N: cycle through chords, building octaves & velocity each pass
+  for (let pass = 0; pass < loops; pass++) {
+    const oct = Math.min(1 + pass, 3);
+    const vel = Math.min(75 + pass * 12, 115);
+    const passCcAir = Math.min(40 + pass * 18, 95);
+    for (let i = 0; i < p.chords.length; i++) {
+      const sc = { name: `${pass + 1}·${i + 1}`, bars: 1, chord: p.chords[i] };
+      if (i === 0) {
+        // First scene of each pass updates octaves/velocity/AIR.
+        sc.octaves = oct;
+        sc.velocity = vel;
+        sc.cc = { air: passCcAir, envelope: 80 + pass * 5, velocity: vel };
+      }
+      scenes.push(sc);
+    }
+  }
+
+  // Outro: held tonic with chord pattern at 1/4, long gate
+  scenes.push({ name: "outro", bars: outroBars, chord: p.chords[0],
+    pattern: "chord", rate: "1/4", octaves: 1, gate: 0.99, velocity: 60,
+    cc: { air: 25, envelope: 100, velocity: 60 } });
+
+  return {
+    title: p.title,
+    subtitle: `${p.composer} · ${p.year} · transposed to ${key} ${p.mode}`,
+    bpm: p.bpm,
+    key, mode: p.mode,
+    scenes,
+  };
+}
+
+export const CLASSICAL_SONGS = CLASSICAL.map(classicalToSong);
+
 export const SONGS = [
   TINES_AND_TIME,
   PRELUDE,
@@ -339,6 +502,7 @@ export const SONGS = [
   GYMNOPEDIE,
   INDETERMINACY,
   CHORAL,
+  ...CLASSICAL_SONGS,
 ];
 
 // Total bar count cross-check happens in tests.

@@ -14,7 +14,7 @@ It's built around the assumption that you're a music novice (chord pads labelled
 
 ![Chord pattern detail](docs/chords-detail.png)
 
-## The SONG button — eight bundled compositions
+## The SONG button — 28 bundled compositions
 
 ![SONG mode playing the bundled composition](docs/song-playing.png)
 
@@ -32,6 +32,8 @@ Press SONG and ARP8 plays a complete generative composition. The transport has a
 | 8 | **Choral** | after Arvo Pärt | C maj | 50 | tintinnabuli — held chord pads, long gates, sacred minimalism |
 
 All eight are written for the default phase8 install (C major C3-C4). The minor-key songs run in A minor and the modal piece in D Dorian — both share the C-major scale notes so every chord lands on installed tines.
+
+Cycle past these eight and you reach a **classical catalogue of 20 pieces** — Pachelbel, Bach (Air on the G String, Jesu Joy, Cello Suite Prelude, Minuet in G, Invention No. 1, Sheep May Safely Graze), Handel (Hallelujah, Sarabande), Mozart (Eine kleine Nachtmusik, K. 545), Vivaldi (Spring), Beethoven (Ode to Joy, Moonlight Sonata 1st mvt, Für Elise, Symphony No. 5), Schubert (Ave Maria), Satie (Gymnopédie No. 1), Debussy (Clair de Lune), Albinoni (Adagio in G minor). All transposed to C major or A minor so they fit the default install. Each is data-driven from a tiny metadata row (composer, BPM, mode, pattern, chord-degree progression) and expanded by `classicalToSong()` into a full intro / build-passes / outro arrangement; they're not literal transcriptions, just the recognisable chord skeleton driven through the arpeggiator.
 
 **What the engine drives during a song**
 
