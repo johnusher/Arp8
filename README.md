@@ -51,6 +51,21 @@ Open in **Chrome or Edge** on macOS. (Safari and Firefox don't ship Web MIDI as 
 
 If you don't have a phase8: append `?demo` to the URL to see the UI populated with mock state.
 
+## Retuning your phase8
+
+The phase8 ships with **13 chromatically tuned steel resonators** and you install **8 at a time** in the eight slots. They're physically swappable — loosen the stabiliser screw with the included 2.5 mm hex key, slide one out, slide another in. Per manual §7.1.
+
+You can also **fine-tune each resonator** by sliding it in or out of its mount: longer = lower pitch, shorter = higher pitch (manual §7.2). Tune by ear or against a tuner. After any swap or tune-up, **calibrate** with `SELECT + power-on` so the synth re-learns its scale.
+
+This makes the phase8 a serious instrument for **alternative tunings** — equal-tempered scales beyond C major, just intonation, microtonal layouts, custom modes, even percussive setups where you intentionally detune the resonators away from any musical pitch. Korg Berlin has signalled future "resonator drops" with new tonal palettes (extra-bass packs, etc.) and the launch edition includes three precision-crafted experimental shapes. Communities at Superbooth showings have already shown people building their own scales on the unit.
+
+**What this means for ARP8:** the chord engine currently assumes the default C major C3-C4 layout (`phase8Tines()` in [`src/chords.js`](src/chords.js) returns `[C3, D3, E3, F3, G3, A3, B3, C4]`). If you've retuned to something exotic, you have two options:
+
+1. **Edit `phase8Tines()`** in `src/chords.js` to list the MIDI pitches you've actually installed. Diatonic chord generation, snap-to-tines, and the on-screen tine labels will then reflect your custom scale. The chord pads may go out-of-range for many keys — that's not a bug, it's the constraint of your install. (Future: a UI editor for tine layout.)
+2. **Switch the phase8 to "Frequency Based" MIDI mode** (`SELECT + power-on` calibration auto-assigns the MIDI map), then set ARP8's `p8 mode` dropdown to `pitch · calibrated`. Now MIDI on the wire matches your real pitches. Combined with edit (1) above, you get a fully consistent setup.
+
+For non-pitched / percussive resonator setups, you're better off bypassing the chord engine entirely: use the "played" pattern, click chord pads as triggers (each pad sends a fixed slot set), and treat ARP8 as a polyrhythmic step trigger.
+
 ## Phase8 MIDI mode — important
 
 Per the phase8 manual §8.4 ("MIDI Note Assignment"), the synth ships in **STATIC** mode where the eight resonator slots receive on **MIDI 36-43 chromatically**, *regardless of the pitch of the resonators you've installed*. So a "C3 Note On" (MIDI 48) will be ignored by a default-configured phase8 even if you have a C3 resonator in slot 1.
