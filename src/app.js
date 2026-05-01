@@ -495,6 +495,7 @@ function applySongScene(params) {
 // Current song selector state
 state.songIndex = 0;
 state.songPlaying = false;
+state.playlistMode = false; // true = play random next song on end (long-press SONG)
 state.savedKey = null;
 state.savedMode = null;
 
@@ -503,18 +504,28 @@ const songSubEl   = $("song-subtitle");
 
 function refreshSongDisplay() {
   const s = SONGS[state.songIndex];
+  const prefix = state.playlistMode ? "↯ shuffle · " : "";
   songTitleEl.textContent = s.title;
-  songSubEl.textContent   = `${state.songIndex + 1}/${SONGS.length} · ${s.subtitle}`;
+  songSubEl.textContent   = `${prefix}${state.songIndex + 1}/${SONGS.length} · ${s.subtitle}`;
 }
 refreshSongDisplay();
 
+function pickRandomDifferentSongIndex() {
+  if (SONGS.length <= 1) return state.songIndex;
+  let i;
+  do { i = Math.floor(Math.random() * SONGS.length); } while (i === state.songIndex);
+  return i;
+}
+
 function cycleSong(delta) {
+  // Manually picking a song with the chevrons exits shuffle mode.
+  if (state.playlistMode) {
+    state.playlistMode = false;
+    songBtn.classList.remove("playlist");
+  }
   state.songIndex = ((state.songIndex + delta) % SONGS.length + SONGS.length) % SONGS.length;
   refreshSongDisplay();
   if (state.songPlaying) {
-    // Hot-swap: stop the in-flight player & key, but keep the scheduler running
-    // so the transition is instant. startSong() rebuilds everything from the
-    // new song's first scene.
     songPlayer.stop();
     restoreKeyAfterSong();
     midi.panic();
@@ -542,10 +553,20 @@ const songPlayer = new SongPlayer({
           : "—";
   },
   onEnd: () => {
-    // Songs loop forever until the user stops them or cycles to another.
-    // A song never auto-advances to the next one in the catalogue.
+    // Default: loop the current song forever. Playlist (shuffle) mode: pick a
+    // random other song and switch to it. Either path keeps the scheduler
+    // running and the SONG button armed.
     if (!state.songPlaying) return;
-    songPlayer.play(SONGS[state.songIndex]);
+    if (state.playlistMode) {
+      restoreKeyAfterSong();
+      state.songIndex = pickRandomDifferentSongIndex();
+      refreshSongDisplay();
+      const next = SONGS[state.songIndex];
+      applySongKeyMode(next);
+      songPlayer.play(next);
+    } else {
+      songPlayer.play(SONGS[state.songIndex]);
+    }
   },
 });
 
@@ -582,13 +603,56 @@ function startSong() {
 function stopSong() {
   songPlayer.stop();
   state.songPlaying = false;
-  songBtn.classList.remove("armed");
+  state.playlistMode = false;
+  songBtn.classList.remove("armed", "playlist");
   restoreKeyAfterSong();
   midi.panic();
   for (const t of tinesEl.children) t.classList.remove("active");
   $("np-chord").textContent = "—";
+  refreshSongDisplay();
 }
-songBtn.addEventListener("click", () => {
+
+// Long-press detection for playlist (shuffle) mode. ~500ms hold enters
+// shuffle: each song's onEnd advances to a random next song forever.
+const LONG_PRESS_MS = 500;
+let songPressTimer = null;
+let songLongPressFired = false;
+
+function startPlaylistMode() {
+  songLongPressFired = true;
+  // If something was already playing, stop it cleanly.
+  if (state.songPlaying) {
+    songPlayer.stop();
+    restoreKeyAfterSong();
+    state.songPlaying = false;
+    songBtn.classList.remove("armed");
+  }
+  state.playlistMode = true;
+  state.songIndex = Math.floor(Math.random() * SONGS.length);
+  refreshSongDisplay();
+  songBtn.classList.add("playlist");
+  startSong();
+}
+
+songBtn.addEventListener("mousedown", () => {
+  songLongPressFired = false;
+  if (songPressTimer) clearTimeout(songPressTimer);
+  songPressTimer = setTimeout(startPlaylistMode, LONG_PRESS_MS);
+});
+const cancelPress = () => { if (songPressTimer) { clearTimeout(songPressTimer); songPressTimer = null; } };
+songBtn.addEventListener("mouseup", () => {
+  cancelPress();
+  if (songLongPressFired) return; // long-press already handled
+  if (state.songPlaying) stopSong(); else startSong();
+});
+songBtn.addEventListener("mouseleave", cancelPress);
+songBtn.addEventListener("touchstart", () => {
+  songLongPressFired = false;
+  songPressTimer = setTimeout(startPlaylistMode, LONG_PRESS_MS);
+}, { passive: true });
+songBtn.addEventListener("touchend", () => {
+  cancelPress();
+  if (songLongPressFired) return;
   if (state.songPlaying) stopSong(); else startSong();
 });
 

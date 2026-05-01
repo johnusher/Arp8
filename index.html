@@ -40,7 +40,7 @@
         </div>
         <button class="song-cycle" id="song-next" title="next song">▶</button>
       </div>
-      <button class="t-btn song"  id="btn-song"   title="play / stop the selected song">SONG</button>
+      <button class="t-btn song"  id="btn-song"   title="tap = play/stop · long-press (½s) = shuffle through all songs">SONG</button>
       <button class="t-btn play"  id="btn-play"   title="space">▶</button>
       <button class="t-btn stop"  id="btn-stop"   title="space">■</button>
       <button class="t-btn panic" id="btn-panic"  title="all-notes-off">⌧</button>
@@ -234,7 +234,8 @@
           <ul>
             <li><b>28 bundled pieces.</b> 8 originals + 20 sacred / organ / drone — Bach (organ Toccata, Passacaglia, Cello Prelude, Air, Jesu Joy), Pachelbel (Canon, Chaconne), Pärt (Spiegel, Für Alina, Cantus, Fratres), Hildegard, Allegri, Tavener, Górecki, Orff (O Fortuna), Albinoni, Schubert, Satie, Riley.</li>
             <li><b>◀ ▶</b> chevrons in the transport cycle through the catalogue.</li>
-            <li><b>SONG</b> starts / stops the current song. Songs loop forever.</li>
+            <li><b>SONG</b> tap = start / stop the selected song (loops forever). <b>Long-press (½ sec)</b> = enter <b>shuffle</b> mode — random song after random song, continuously.</li>
+            <li>Cycling with ◀ ▶ exits shuffle and locks to the picked song.</li>
             <li>Most classical pieces play <i>actual melodies</i> (not just chord arps) using the engine's <code>pattern: "played"</code> mode.</li>
           </ul>
         </section>
