@@ -592,9 +592,21 @@ songBtn.addEventListener("click", () => {
   if (state.songPlaying) stopSong(); else startSong();
 });
 
+// ───── Help modal ───────────────────────────────────────────────────────────
+const helpModal = $("help-modal");
+const openHelp  = () => { helpModal.hidden = false; };
+const closeHelp = () => { helpModal.hidden = true; };
+$("btn-help").addEventListener("click", openHelp);
+$("btn-help-close").addEventListener("click", closeHelp);
+$("help-bg").addEventListener("click", closeHelp);
+
 // ───── Keyboard shortcuts ───────────────────────────────────────────────────
 window.addEventListener("keydown", (e) => {
   if (e.target.tagName === "SELECT" || e.target.tagName === "INPUT") return;
+  // Modal trumps everything else.
+  if (e.key === "Escape" && !helpModal.hidden) { closeHelp(); return; }
+  if (e.key === "?")                            { openHelp();  return; }
+  if (!helpModal.hidden) return; // swallow other shortcuts while manual is open
   if (e.code === "Space") {
     e.preventDefault();
     if (sched.running) stopSched(); else startSched();
@@ -604,7 +616,7 @@ window.addEventListener("keydown", (e) => {
     midi.panic();
     return;
   }
-  // 1..7 for diatonic chords. 8/9 for extensions if added.
+  // 1..7 for diatonic chords.
   const map = { "1":0, "2":1, "3":2, "4":3, "5":4, "6":5, "7":6 };
   if (map[e.key] !== undefined) setArmedChord(map[e.key]);
 });
@@ -625,6 +637,9 @@ function applyDemo() {
   setPattern(params.get("pattern") || "updown");
   const padIdx = Number(params.get("chord") ?? 3);
   setTimeout(() => {
+    if (params.has("help")) {
+      $("help-modal").hidden = false;
+    }
     if (params.has("song")) {
       // Fake the song-playing visual state for screenshots.
       songBtn.classList.add("armed");

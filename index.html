@@ -25,6 +25,8 @@
       <span class="midi-status" id="midi-status">–</span>
     </div>
 
+    <button class="help-btn" id="btn-help" title="user manual (?)">?</button>
+
     <div class="transport">
       <button class="t-btn test"  id="btn-test"   title="send a test C3 to verify MIDI path">TEST</button>
       <div class="song-pick" id="song-pick">
@@ -183,12 +185,87 @@
 
   </main>
 
+  <!-- ═════════ HELP MODAL ═════════ -->
+  <div class="modal" id="help-modal" hidden>
+    <div class="modal-bg" id="help-bg"></div>
+    <div class="modal-panel" role="dialog" aria-labelledby="help-title">
+      <button class="modal-close" id="btn-help-close" title="close (esc)">×</button>
+      <header class="modal-head">
+        <h1 id="help-title">ARP8 <span class="help-ver">user manual · v0.1</span></h1>
+        <div class="help-tag">browser MIDI arpeggiator for the Korg phase8</div>
+      </header>
+
+      <div class="modal-grid">
+        <section>
+          <h2>quickstart</h2>
+          <ul>
+            <li>Open in <b>Chrome</b> or Edge. Safari and Firefox don't support Web MIDI as of 2026.</li>
+            <li>Plug in your phase8 via USB-C (or any USB-MIDI device). Allow the MIDI prompt.</li>
+            <li>Hit <b>TEST</b> in the transport — you should hear C3 and see bytes in the MIDI monitor at the bottom.</li>
+            <li>Click a chord pad — the arp starts. Click another to switch chords.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>phase8 setup</h2>
+          <ul>
+            <li>Phase8 ships in <b>STATIC mode</b>: slots 1–8 listen on MIDI 36–43, regardless of the resonators you've installed. ARP8 defaults to this — no synth-side config needed.</li>
+            <li>If you've put your phase8 in <b>FREQUENCY mode</b> (calibrated via <code>SELECT + power-on</code>), switch the <b>p8 mode</b> dropdown to <code>pitch · calibrated</code>.</li>
+            <li>Default install assumed: 8 C-major resonators, C3 → C4. Edit <code>phase8Tines()</code> in <code>src/chords.js</code> for custom layouts.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>playing</h2>
+          <ul>
+            <li><b>Chord pads</b> — click to arm a diatonic chord. <b>Latch</b> on (default) keeps it armed; off = hold to play.</li>
+            <li><b>Pattern</b> — pick the arpeggio shape (up / down / converge / random / chord / etc.).</li>
+            <li><b>Knobs</b> — drag vertically to adjust. Hold <kbd>Shift</kbd> for fine. Scroll wheel works too.</li>
+            <li><b>Step grid</b> — click cells to mute beats; right-click to clear.</li>
+            <li><b>Snap to tines</b> — quantises any chord note onto an installed resonator pitch.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>songs</h2>
+          <ul>
+            <li>8 bundled compositions: <i>Tines & Time</i>, <i>Prelude</i> (Bach), <i>Pulse</i> (Reich), <i>Drift</i> (Eno), <i>Driver</i> (Carpenter), <i>Gymnopédie</i> (Satie), <i>Indeterminacy</i> (Cage), <i>Choral</i> (Pärt).</li>
+            <li><b>◀ ▶</b> chevrons in the transport cycle through the catalogue.</li>
+            <li><b>SONG</b> button starts / stops the current song. Songs loop forever.</li>
+            <li>Cycling while playing hot-swaps to the new song. Pressing a chord pad aborts the song.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>keyboard</h2>
+          <ul class="kb">
+            <li><kbd>Space</kbd> play / stop</li>
+            <li><kbd>1</kbd>–<kbd>7</kbd> chord pads</li>
+            <li><kbd>Esc</kbd> panic (all notes off)</li>
+            <li><kbd>?</kbd> open / close this manual</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>links</h2>
+          <ul>
+            <li>Source &amp; docs: <a href="https://github.com/johnusher/Arp8" target="_blank" rel="noopener">github.com/johnusher/Arp8</a></li>
+            <li>phase8: <a href="https://www.korg.com/us/products/dj/phase8/" target="_blank" rel="noopener">korg.com phase8</a> · <a href="https://cdn.korg.com/us/support/download/files/e6f7bb35245061f630f2b8868e78784b.pdf" target="_blank" rel="noopener">manual (PDF)</a></li>
+            <li>Issues / feedback: <a href="https://github.com/johnusher/Arp8/issues" target="_blank" rel="noopener">github issues</a></li>
+            <li>License: MIT</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <footer class="legend">
     <span>space — play/stop</span>
     <span>1–7 — chord</span>
     <span>esc — panic</span>
+    <span>? — help</span>
     <span class="legend-mid" id="midi-log">midi: idle</span>
-    <span class="legend-end">arp8 v0.1 · made for phase8</span>
+    <span class="legend-end"><a href="https://github.com/johnusher/Arp8" target="_blank" rel="noopener">arp8 v0.1 · github</a></span>
   </footer>
 
 </div>
