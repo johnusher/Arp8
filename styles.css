@@ -639,12 +639,11 @@ body::after {
 }
 
 .pat {
-  height: 38px;
+  height: 54px;
   border: 1px solid #050608;
   border-radius: var(--r-md);
   background: linear-gradient(180deg, var(--panel-up) 0%, var(--panel) 100%);
   color: var(--text);
-  font-size: 14px;
   cursor: pointer;
   font-family: "SF Mono", "Menlo", monospace;
   box-shadow:
@@ -652,9 +651,35 @@ body::after {
     0 2px 4px rgba(0,0,0,0.4);
   transition: all 0.1s var(--ease);
   font-weight: 600;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
 }
-.pat.wide { grid-column: span 5; height: 32px; font-size: 11px; letter-spacing: 0.18em; }
+.pat .pat-icon {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--brass-hi);
+  letter-spacing: -0.05em;
+}
+.pat .pat-label {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--text-mute);
+  font-weight: 700;
+}
+.pat.wide {
+  grid-column: span 5;
+  height: 36px;
+  flex-direction: row;
+  gap: 6px;
+}
+.pat.wide .pat-label { font-size: 12px; letter-spacing: 0.28em; color: var(--text); }
 .pat:hover { background: linear-gradient(180deg, #353a4f 0%, var(--panel) 100%); }
+.pat:hover .pat-icon  { color: var(--amber); }
+.pat:hover .pat-label { color: var(--text); }
 .pat.active {
   background: linear-gradient(180deg, var(--amber) 0%, #c08020 100%);
   color: #1a0e02;
@@ -663,6 +688,8 @@ body::after {
     0 0 12px rgba(255,170,60,0.4);
   border-color: var(--amber-dim);
 }
+.pat.active .pat-icon  { color: #1a0e02; }
+.pat.active .pat-label { color: #1a0e02; opacity: 0.85; }
 
 /* ───── TEMPO ───── */
 .panel-tempo { grid-area: tempo; display: flex; flex-direction: column; }

@@ -76,17 +76,28 @@
         <span class="caption">pattern</span>
       </div>
       <div class="patterns" id="patterns">
-        <button class="pat" data-p="up"          title="ascend">↑</button>
-        <button class="pat" data-p="down"        title="descend">↓</button>
-        <button class="pat" data-p="updown"      title="up-then-down">↕</button>
-        <button class="pat" data-p="downup"      title="down-then-up">⇕</button>
-        <button class="pat" data-p="converge"    title="outside-in">⇥</button>
-        <button class="pat" data-p="diverge"     title="inside-out">⇤</button>
-        <button class="pat" data-p="played"      title="as played">≡</button>
-        <button class="pat" data-p="random"      title="random">⊕</button>
-        <button class="pat" data-p="randomOther" title="random, no immediate repeat">⊗</button>
-        <button class="pat" data-p="randomOnce"  title="locked random">⊜</button>
-        <button class="pat wide" data-p="chord"  title="full chord every step">CHORD</button>
+        <button class="pat" data-p="up"          title="ascend low → high">
+          <span class="pat-icon">↑</span><span class="pat-label">UP</span></button>
+        <button class="pat" data-p="down"        title="descend high → low">
+          <span class="pat-icon">↓</span><span class="pat-label">DOWN</span></button>
+        <button class="pat" data-p="updown"      title="ascend then descend">
+          <span class="pat-icon">↑↓</span><span class="pat-label">UP·DN</span></button>
+        <button class="pat" data-p="downup"      title="descend then ascend">
+          <span class="pat-icon">↓↑</span><span class="pat-label">DN·UP</span></button>
+        <button class="pat" data-p="converge"    title="outside in: low, high, next-low, next-high…">
+          <span class="pat-icon">▶◀</span><span class="pat-label">CONV</span></button>
+        <button class="pat" data-p="diverge"     title="inside out from the centre">
+          <span class="pat-icon">◀▶</span><span class="pat-label">DIV</span></button>
+        <button class="pat" data-p="played"      title="play notes in the order they were entered">
+          <span class="pat-icon">≡</span><span class="pat-label">ORDER</span></button>
+        <button class="pat" data-p="random"      title="random — any note, possibly repeating">
+          <span class="pat-icon">?</span><span class="pat-label">RND</span></button>
+        <button class="pat" data-p="randomOther" title="random — no immediate repeat until cycle complete">
+          <span class="pat-icon">?</span><span class="pat-label">RND≠</span></button>
+        <button class="pat" data-p="randomOnce"  title="locked random — pick once, loop the permutation">
+          <span class="pat-icon">?</span><span class="pat-label">ONCE</span></button>
+        <button class="pat wide" data-p="chord"  title="fire every chord note simultaneously each step">
+          <span class="pat-label">CHORD</span></button>
       </div>
     </section>
 
