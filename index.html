@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ARP8 — acoustic arpeggiator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- ═════════ HEADER ═════════ -->
+  <header class="bar">
+    <div class="brand">
+      <div class="logo">ARP<span class="logo-num">8</span></div>
+      <div class="tag">acoustic arpeggiator · for phase8</div>
+    </div>
+
+    <div class="bar-spacer"></div>
+
+    <div class="midi-pick">
+      <label>output</label>
+      <select id="midi-out"></select>
+      <span class="midi-status" id="midi-status">–</span>
+    </div>
+
+    <div class="transport">
+      <button class="t-btn test"  id="btn-test"   title="send a test C3 to verify MIDI path">TEST</button>
+      <button class="t-btn play"  id="btn-play"   title="space">▶</button>
+      <button class="t-btn stop"  id="btn-stop"   title="space">■</button>
+      <button class="t-btn panic" id="btn-panic"  title="all-notes-off">⌧</button>
+    </div>
+  </header>
+
+  <!-- ═════════ MAIN GRID ═════════ -->
+  <main class="grid">
+
+    <!-- TINES + STEPS -->
+    <section class="panel panel-tines">
+      <div class="panel-head">
+        <span class="caption">tines</span>
+        <span class="caption-sub">phase8 · C major · C3 → C4</span>
+      </div>
+      <div class="tines" id="tines"></div>
+      <div class="now-playing" id="now-playing">
+        <span class="np-label">now</span>
+        <span class="np-note" id="np-note">—</span>
+        <span class="np-chord" id="np-chord">—</span>
+      </div>
+
+      <div class="panel-head" style="margin-top:14px">
+        <span class="caption">steps</span>
+        <span class="caption-sub">click cells to mute · right-click to clear</span>
+      </div>
+      <div class="steps" id="steps"></div>
+    </section>
+
+    <!-- PATTERNS -->
+    <section class="panel panel-pattern">
+      <div class="panel-head">
+        <span class="caption">pattern</span>
+      </div>
+      <div class="patterns" id="patterns">
+        <button class="pat" data-p="up"          title="ascend">↑</button>
+        <button class="pat" data-p="down"        title="descend">↓</button>
+        <button class="pat" data-p="updown"      title="up-then-down">↕</button>
+        <button class="pat" data-p="downup"      title="down-then-up">⇕</button>
+        <button class="pat" data-p="converge"    title="outside-in">⇥</button>
+        <button class="pat" data-p="diverge"     title="inside-out">⇤</button>
+        <button class="pat" data-p="played"      title="as played">≡</button>
+        <button class="pat" data-p="random"      title="random">⊕</button>
+        <button class="pat" data-p="randomOther" title="random, no immediate repeat">⊗</button>
+        <button class="pat" data-p="randomOnce"  title="locked random">⊜</button>
+        <button class="pat wide" data-p="chord"  title="full chord every step">CHORD</button>
+      </div>
+    </section>
+
+    <!-- TEMPO -->
+    <section class="panel panel-tempo">
+      <div class="panel-head">
+        <span class="caption">tempo</span>
+      </div>
+      <div class="bpm-screen" id="bpm-screen">
+        <div class="bpm-num" id="bpm-num">120</div>
+        <div class="bpm-unit">BPM</div>
+        <div class="pulse" id="pulse"></div>
+      </div>
+      <div class="tempo-ctrls">
+        <button class="ghost" id="bpm-down">−</button>
+        <button class="ghost" id="tap">TAP</button>
+        <button class="ghost" id="bpm-up">+</button>
+      </div>
+    </section>
+
+    <!-- KNOBS -->
+    <section class="panel panel-knobs">
+      <div class="knob-row">
+        <div class="knob-cell">
+          <div class="knob" id="k-rate"  data-min="0" data-max="6" data-int="1"></div>
+          <div class="k-name">rate</div>
+          <div class="k-val" id="v-rate">1/8</div>
+        </div>
+        <div class="knob-cell">
+          <div class="knob" id="k-oct" data-min="1" data-max="4" data-int="1"></div>
+          <div class="k-name">octaves</div>
+          <div class="k-val" id="v-oct">1</div>
+        </div>
+        <div class="knob-cell">
+          <div class="knob" id="k-gate" data-min="5" data-max="100" data-int="1"></div>
+          <div class="k-name">gate</div>
+          <div class="k-val" id="v-gate">50%</div>
+        </div>
+        <div class="knob-cell">
+          <div class="knob" id="k-swing" data-min="0" data-max="50" data-int="1"></div>
+          <div class="k-name">swing</div>
+          <div class="k-val" id="v-swing">0%</div>
+        </div>
+        <div class="knob-cell">
+          <div class="knob" id="k-vel" data-min="1" data-max="127" data-int="1"></div>
+          <div class="k-name">velocity</div>
+          <div class="k-val" id="v-vel">100</div>
+        </div>
+        <div class="knob-cell switches">
+          <label class="switch" title="hold a chord without holding the mouse">
+            <input type="checkbox" id="sw-latch" checked>
+            <span>latch</span>
+          </label>
+          <label class="switch" title="quantize chord notes onto installed tines">
+            <input type="checkbox" id="sw-snap" checked>
+            <span>snap → tines</span>
+          </label>
+          <div class="ch-pick">
+            <span>ch</span>
+            <select id="sel-channel">
+              <option>1</option><option>2</option><option>3</option><option>4</option>
+              <option>5</option><option>6</option><option>7</option><option>8</option>
+              <option>9</option><option>10</option><option>11</option><option>12</option>
+              <option>13</option><option>14</option><option>15</option><option>16</option>
+            </select>
+          </div>
+          <div class="ch-pick" title="phase8 §8.4 MIDI Note Assignment — must match what your synth is set to">
+            <span>p8 mode</span>
+            <select id="sel-p8mode">
+              <option value="static">slot · 36-43</option>
+              <option value="frequency">pitch · calibrated</option>
+              <option value="transposed">slot +2oct · 60-67</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHORDS -->
+    <section class="panel panel-chords">
+      <div class="panel-head">
+        <span class="caption">chords</span>
+        <span class="caption-sub">
+          key
+          <select id="sel-key">
+            <option>C</option><option>C#</option><option>D</option><option>D#</option>
+            <option>E</option><option>F</option><option>F#</option><option>G</option>
+            <option>G#</option><option>A</option><option>A#</option><option>B</option>
+          </select>
+          <select id="sel-mode">
+            <option value="major">major</option>
+            <option value="minor">minor</option>
+          </select>
+        </span>
+        <span class="caption-sub" id="key-tip">notes that fit your phase8: 7/7</span>
+      </div>
+      <div class="chord-pads" id="chord-pads"></div>
+    </section>
+
+  </main>
+
+  <footer class="legend">
+    <span>space — play/stop</span>
+    <span>1–7 — chord</span>
+    <span>esc — panic</span>
+    <span class="legend-mid" id="midi-log">midi: idle</span>
+    <span class="legend-end">arp8 v0.1 · made for phase8</span>
+  </footer>
+
+</div>
+
+<script type="module" src="/src/app.js"></script>
+</body>
+</html>
