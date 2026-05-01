@@ -37,10 +37,15 @@ export const PHASE8_CC = {
 
 const _ = undefined; // shorthand for "inherit from previous scene"
 
+// Each song is a self-contained composition. Same engine vocabulary, different
+// musical territory. All use the default phase8 install (C major C3..C4) — the
+// minor-key songs run in A minor and the modal song in D Dorian, both of which
+// share the C-major scale notes so every chord lands on installed tines.
 export const TINES_AND_TIME = {
   title: "Tines & Time",
   subtitle: "axis pop · pachelbel bridge · cage interlude · 2 min",
   bpm: 88, // default; per-scene `bpm` overrides
+  key: "C", mode: "major",
   // chord = diatonic-triad index (0=I, 1=ii, ... 6=vii°) for the current key.
   // notes = array of MIDI pitches (overrides chord lookup); [] = silence.
   scenes: [
@@ -108,6 +113,234 @@ export const TINES_AND_TIME = {
   ],
 };
 
+// ──────────────────────────────────────────────────────────────────────────
+// 2. PRELUDE — after Bach's Prelude in C, BWV 846 (1722). Continuous broken
+//    chords, locked tempo, no chaos. Pure mathematical motion.
+// ──────────────────────────────────────────────────────────────────────────
+export const PRELUDE = {
+  title: "Prelude",
+  subtitle: "after Bach · BWV 846",
+  bpm: 76,
+  key: "C", mode: "major",
+  scenes: [
+    { name: "intro",  bars: 2, chord: 0, bpm: 76, pattern: "up", rate: "1/16", octaves: 1, gate: 0.5, swing: 0, velocity: 80,
+      cc: { air: 18, modDepth: 5, modRate: 30, envelope: 70, velocity: 80 }, chaos: 0 },
+    // A: tonic-dominant prolongation
+    { name: "A·1", bars: 2, chord: 0 }, { name: "A·2", bars: 2, chord: 5 },
+    { name: "A·3", bars: 2, chord: 1 }, { name: "A·4", bars: 2, chord: 4 },
+    { name: "A·5", bars: 2, chord: 2 }, { name: "A·6", bars: 2, chord: 5 },
+    { name: "A·7", bars: 2, chord: 3 }, { name: "A·8", bars: 2, chord: 4 },
+    // B: deeper journey, octaves up for richness
+    { name: "B·1", bars: 2, chord: 0, octaves: 2,
+      cc: { air: 32, envelope: 78 } },
+    { name: "B·2", bars: 2, chord: 3 }, { name: "B·3", bars: 2, chord: 6 },
+    { name: "B·4", bars: 2, chord: 2 }, { name: "B·5", bars: 2, chord: 5 },
+    { name: "B·6", bars: 2, chord: 1 }, { name: "B·7", bars: 2, chord: 4 },
+    // Coda — back to root with long sustain
+    { name: "coda·1", bars: 2, chord: 0, octaves: 1, pattern: "up",
+      cc: { air: 24 } },
+    { name: "coda·2", bars: 4, chord: 0, pattern: "chord", rate: "1/4", gate: 0.99, velocity: 70,
+      cc: { air: 18, envelope: 90, velocity: 70 } },
+  ],
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// 3. PULSE — Steve Reich minimalism. One chord held for many bars, octaves
+//    morph slowly, low chaos for organic phasing. "Music for 18 Musicians"
+//    in spirit.
+// ──────────────────────────────────────────────────────────────────────────
+export const PULSE = {
+  title: "Pulse",
+  subtitle: "after Reich · phase music for 18 tines",
+  bpm: 132,
+  key: "A", mode: "minor",  // i=Am, iv=Dm, v=Em, VI=F, VII=G — all on C-maj tines
+  scenes: [
+    // Long single-chord stretches; the variation comes from CC drift, not chord changes.
+    { name: "A·i  (Am)",   bars: 12, chord: 0, bpm: 132, pattern: "up", rate: "1/16", octaves: 1, gate: 0.45, swing: 0, velocity: 88,
+      cc: { air: 45, modDepth: 22, modRate: 60, envelope: 70, velocity: 88 }, chaos: 0.08 },
+    { name: "B·i  (oct 2)",bars: 12, chord: 0, octaves: 2, velocity: 95,
+      cc: { air: 60, envelope: 78, velocity: 95 }, chaos: 0.10 },
+    { name: "C·VII (G)",   bars: 10, chord: 6, octaves: 2, velocity: 100,
+      cc: { air: 70, modDepth: 35, envelope: 82, velocity: 100 }, chaos: 0.12 },
+    { name: "D·VI (F)",    bars: 10, chord: 5, octaves: 3, velocity: 108,
+      cc: { air: 85, modDepth: 50, envelope: 88, velocity: 108 }, chaos: 0.14 },
+    { name: "E·III(C)",    bars: 8,  chord: 2, octaves: 2,
+      cc: { air: 70, modDepth: 35, envelope: 78 }, chaos: 0.10 },
+    { name: "F·i  (return)",bars: 8, chord: 0, octaves: 1, velocity: 80,
+      cc: { air: 40, modDepth: 18, envelope: 72, velocity: 80 }, chaos: 0.06 },
+  ],
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// 4. DRIFT — Brian Eno ambient. Very slow, mostly chord-pads with tons of
+//    AIR, sparse phrases punctuated by silence. "Music for Airports" vibe.
+// ──────────────────────────────────────────────────────────────────────────
+export const DRIFT = {
+  title: "Drift",
+  subtitle: "after Eno · music for tines",
+  bpm: 48,
+  key: "A", mode: "minor",
+  scenes: [
+    { name: "fade in",  bars: 2, chord: 0, bpm: 48, pattern: "chord", rate: "1/4", octaves: 1, gate: 0.99, swing: 0, velocity: 40,
+      cc: { air: 95, modDepth: 12, modRate: 18, envelope: 110, velocity: 40 }, chaos: 0 },
+    { name: "i (Am)",   bars: 4, chord: 0, velocity: 55,
+      cc: { air: 100, envelope: 115, velocity: 55 } },
+    { name: "·· quiet", bars: 2, notes: [], cc: { air: 110 } },
+    { name: "VI (F)",   bars: 4, chord: 5, velocity: 50,
+      cc: { air: 105, modDepth: 18, envelope: 115, velocity: 50 } },
+    { name: "·· quiet", bars: 2, notes: [], cc: { air: 115 } },
+    { name: "iv (Dm)",  bars: 4, chord: 3, velocity: 45,
+      cc: { air: 110, envelope: 118, velocity: 45 } },
+    { name: "·· dream", bars: 3, notes: [], cc: { air: 120, modDepth: 30 } },
+    { name: "v (Em)",   bars: 4, chord: 4, velocity: 60,
+      cc: { air: 115, envelope: 120, velocity: 60 } },
+    { name: "·· quiet", bars: 2, notes: [], cc: { air: 100 } },
+    { name: "i return", bars: 6, chord: 0, velocity: 50,
+      cc: { air: 90, envelope: 125, velocity: 50 } },
+    { name: "fade out", bars: 4, notes: [], cc: { air: 30, envelope: 0 } },
+  ],
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// 5. DRIVER — John Carpenter synthwave. Minor key, descending ostinato, locked
+//    96 BPM, big air for cinema, dynamics build to drop. Halloween / Escape
+//    from NY territory.
+// ──────────────────────────────────────────────────────────────────────────
+export const DRIVER = {
+  title: "Driver",
+  subtitle: "after Carpenter · cinematic minor ostinato",
+  bpm: 96,
+  key: "A", mode: "minor",
+  scenes: [
+    { name: "intro·i",  bars: 4, chord: 0, bpm: 96, pattern: "down", rate: "1/16", octaves: 1, gate: 0.4, swing: 0, velocity: 95,
+      cc: { air: 55, modDepth: 30, modRate: 70, envelope: 65, velocity: 95 }, chaos: 0.08 },
+    { name: "build·i",  bars: 4, chord: 0, octaves: 2, velocity: 105,
+      cc: { air: 75, modDepth: 50, envelope: 75, velocity: 105 } },
+    { name: "drop·i",   bars: 4, chord: 0, octaves: 3, velocity: 122,
+      cc: { air: 100, modDepth: 75, modRate: 95, envelope: 85, velocity: 122 }, chaos: 0.12 },
+    { name: "drive·VII",bars: 4, chord: 6, octaves: 3, velocity: 122 },
+    { name: "drive·VI", bars: 4, chord: 5, octaves: 3 },
+    { name: "drive·v",  bars: 4, chord: 4, octaves: 3 },
+    { name: "drive·i",  bars: 4, chord: 0, octaves: 3 },
+    // Shock pause — Carpenter classic
+    { name: "·· stop",  bars: 1, notes: [], cc: { air: 60, modDepth: 20 } },
+    // Return with extra swagger
+    { name: "back·i",   bars: 4, chord: 0, octaves: 2, velocity: 115,
+      cc: { air: 85, modDepth: 60, envelope: 80, velocity: 115 }, chaos: 0.10 },
+    { name: "back·VI",  bars: 4, chord: 5 },
+    { name: "outro·i",  bars: 4, chord: 0, octaves: 1, velocity: 90,
+      cc: { air: 60, modDepth: 30, envelope: 70, velocity: 90 }, chaos: 0.06 },
+    { name: "fade",     bars: 2, chord: 0, pattern: "chord", rate: "1/4", gate: 0.99, velocity: 55,
+      cc: { air: 30, envelope: 80, velocity: 55 } },
+  ],
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// 6. GYMNOPÉDIE — Satie-inspired tender slow piece in D Dorian (so 7 of the
+//    7 diatonic chords land on C-major tines and the modal flavour is gentle).
+// ──────────────────────────────────────────────────────────────────────────
+export const GYMNOPEDIE = {
+  title: "Gymnopédie",
+  subtitle: "after Satie · tender, sparse, slow",
+  bpm: 60,
+  key: "D", mode: "minor",  // D dorian if you flatten the appropriate scale degree, but minor reads close
+  scenes: [
+    { name: "i (Dm)",   bars: 3, chord: 0, bpm: 60, pattern: "played", rate: "1/4", octaves: 1, gate: 0.85, swing: 0, velocity: 60,
+      cc: { air: 55, modDepth: 8, modRate: 25, envelope: 95, velocity: 60 }, chaos: 0 },
+    { name: "·· rest",  bars: 1, notes: [], cc: { air: 60 } },
+    { name: "VI (Bb→C)",bars: 3, chord: 5, velocity: 65,
+      cc: { air: 60, envelope: 100, velocity: 65 } },
+    { name: "·· rest",  bars: 1, notes: [] },
+    { name: "VII (C)",  bars: 3, chord: 6, velocity: 70 },
+    { name: "·· rest",  bars: 1, notes: [] },
+    { name: "iv (Gm)",  bars: 3, chord: 3, velocity: 60,
+      cc: { air: 65, envelope: 105, velocity: 60 } },
+    { name: "·· rest",  bars: 1, notes: [] },
+    { name: "v (Am)",   bars: 3, chord: 4, velocity: 65 },
+    { name: "·· rest",  bars: 2, notes: [], cc: { air: 70 } },
+    { name: "i return", bars: 4, chord: 0, pattern: "chord", rate: "1/4", gate: 0.95, velocity: 55,
+      cc: { air: 50, envelope: 110, velocity: 55 } },
+    { name: "·· silence", bars: 2, notes: [], cc: { air: 35, envelope: 0 } },
+  ],
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// 7. INDETERMINACY — pure John Cage. Mostly single-tine random selections,
+//    huge tempo swings between scenes, wild chaos values, frequent silence.
+//    "Music of Changes" / "Indeterminacy" in spirit.
+// ──────────────────────────────────────────────────────────────────────────
+export const INDETERMINACY = {
+  title: "Indeterminacy",
+  subtitle: "after Cage · chance procedures for 8 tines",
+  bpm: 90,
+  key: "C", mode: "major",
+  scenes: [
+    { name: "C3 alone",   bars: 2, notes: [48], bpm: 70, pattern: "up", rate: "1/8", octaves: 1, gate: 0.7, swing: 0, velocity: 50,
+      cc: { air: 80, modDepth: 40, modRate: 50, envelope: 95, velocity: 50 }, chaos: 0.3 },
+    { name: "·· rest",    bars: 2, notes: [], cc: { air: 90 } },
+    { name: "G3 fast",    bars: 1, notes: [55], bpm: 200, gate: 0.3, velocity: 90,
+      cc: { air: 105, modDepth: 95, modRate: 110 }, chaos: 0.5 },
+    { name: "·· rest",    bars: 1, notes: [] },
+    { name: "C4 SLOW",    bars: 2, notes: [60], bpm: 35, gate: 0.95, velocity: 110,
+      cc: { air: 115, modDepth: 70, envelope: 120, velocity: 110 }, chaos: 0.4 },
+    { name: "scatter",    bars: 2, notes: [48, 55, 60], bpm: 110, pattern: "random", rate: "1/16", octaves: 1, velocity: 95,
+      cc: { air: 90, modDepth: 80, modRate: 95 }, chaos: 0.8 },
+    { name: "·· void",    bars: 3, notes: [], cc: { air: 60, modDepth: 0 } },
+    { name: "burst chord",bars: 1, chord: 0, bpm: 160, pattern: "chord", rate: "1/16", octaves: 2, gate: 0.4, velocity: 127,
+      cc: { air: 120, modDepth: 115, modRate: 120, envelope: 100, velocity: 127 }, chaos: 0.6 },
+    { name: "F3 still",   bars: 2, notes: [53], bpm: 50, pattern: "up", rate: "1/4", gate: 0.9, velocity: 65,
+      cc: { air: 100, envelope: 115, velocity: 65 }, chaos: 0.2 },
+    { name: "·· silence", bars: 2, notes: [], cc: { air: 40 } },
+    { name: "B3 dancing", bars: 2, notes: [59], bpm: 140, gate: 0.4, velocity: 100,
+      cc: { air: 95, modDepth: 100, modRate: 105, envelope: 70 }, chaos: 0.7 },
+    { name: "all tines",  bars: 1, notes: [48, 50, 52, 53, 55, 57, 59, 60], bpm: 60, pattern: "random", octaves: 1, velocity: 105,
+      cc: { air: 110, modDepth: 90, envelope: 90 }, chaos: 0.55 },
+    { name: "·· coda",    bars: 4, notes: [], cc: { air: 20, modDepth: 0, envelope: 0 } },
+  ],
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// 8. CHORAL — Arvo Pärt's tintinnabuli style. Held chord pads with vast
+//    sustain, soft velocity, sacred minimalism. C major.
+// ──────────────────────────────────────────────────────────────────────────
+export const CHORAL = {
+  title: "Choral",
+  subtitle: "after Pärt · tintinnabuli",
+  bpm: 50,
+  key: "C", mode: "major",
+  scenes: [
+    { name: "I (C)",     bars: 4, chord: 0, bpm: 50, pattern: "chord", rate: "1/4", octaves: 1, gate: 0.99, swing: 0, velocity: 65,
+      cc: { air: 70, modDepth: 8, modRate: 18, envelope: 120, velocity: 65 }, chaos: 0 },
+    { name: "·· breath", bars: 1, notes: [], cc: { air: 75 } },
+    { name: "vi (Am)",   bars: 4, chord: 5, velocity: 70,
+      cc: { air: 75, envelope: 122, velocity: 70 } },
+    { name: "·· breath", bars: 1, notes: [] },
+    { name: "IV (F)",    bars: 4, chord: 3, velocity: 75,
+      cc: { air: 80, envelope: 124, velocity: 75 } },
+    { name: "·· breath", bars: 1, notes: [], cc: { air: 80 } },
+    { name: "V (G)",     bars: 4, chord: 4, velocity: 80,
+      cc: { air: 85, envelope: 126, velocity: 80 } },
+    { name: "·· hush",   bars: 2, notes: [], cc: { air: 70 } },
+    { name: "ii (Dm)",   bars: 3, chord: 1, velocity: 65,
+      cc: { air: 70, envelope: 122, velocity: 65 } },
+    { name: "V (G)",     bars: 3, chord: 4, velocity: 70 },
+    { name: "I return",  bars: 6, chord: 0, velocity: 55,
+      cc: { air: 60, envelope: 127, velocity: 55 } },
+    { name: "·· amen",   bars: 4, notes: [], cc: { air: 25, envelope: 0 } },
+  ],
+};
+
+export const SONGS = [
+  TINES_AND_TIME,
+  PRELUDE,
+  PULSE,
+  DRIFT,
+  DRIVER,
+  GYMNOPEDIE,
+  INDETERMINACY,
+  CHORAL,
+];
+
 // Total bar count cross-check happens in tests.
 
 export class SongPlayer {
@@ -122,7 +355,7 @@ export class SongPlayer {
   //   cancel(id)
   //   rng()         — function returning [0..1); deterministic in tests
   constructor(deps) {
-    this.song       = deps.song;
+    this.song       = deps.song || null;   // optional initial; can also be passed to play()
     this.getChord   = deps.getChord;
     this.applyScene = deps.applyScene;
     this.sendCC     = deps.sendCC  || (() => {});
@@ -134,6 +367,8 @@ export class SongPlayer {
     this.timers     = [];
     this.isPlaying  = false;
   }
+
+  setSong(song) { this.song = song; }
 
   // Per-scene bpm overrides this.song.bpm; default if unset.
   _sceneBpm(i) { return this.song.scenes[i].bpm ?? this.song.bpm; }
@@ -174,7 +409,9 @@ export class SongPlayer {
     return null;
   }
 
-  play() {
+  play(song) {
+    if (song) this.song = song;
+    if (!this.song) throw new Error("SongPlayer.play() called with no song set");
     this.stop();
     this.isPlaying = true;
     let t = 0;

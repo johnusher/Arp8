@@ -6,7 +6,7 @@ import {
   diatonicChords, phase8Tines, snapChord, midiOf, nameOf, NOTE_NAMES,
   pitchToSlotMidi,
 } from "./chords.js";
-import { TINES_AND_TIME, SongPlayer } from "./song.js";
+import { SONGS, SongPlayer } from "./song.js";
 
 // ───── State ────────────────────────────────────────────────────────────────
 const state = {
@@ -492,13 +492,39 @@ function applySongScene(params) {
   }
 }
 
+// Current song selector state
+state.songIndex = 0;
+state.songPlaying = false;
+state.savedKey = null;
+state.savedMode = null;
+
+const songTitleEl = $("song-title");
+const songSubEl   = $("song-subtitle");
+
+function refreshSongDisplay() {
+  const s = SONGS[state.songIndex];
+  songTitleEl.textContent = s.title;
+  songSubEl.textContent   = `${state.songIndex + 1}/${SONGS.length} · ${s.subtitle}`;
+}
+refreshSongDisplay();
+
+function cycleSong(delta) {
+  const wasPlaying = state.songPlaying;
+  if (wasPlaying) stopSong();
+  state.songIndex = ((state.songIndex + delta) % SONGS.length + SONGS.length) % SONGS.length;
+  refreshSongDisplay();
+  if (wasPlaying) startSong();
+}
+$("song-prev").addEventListener("click", () => cycleSong(-1));
+$("song-next").addEventListener("click", () => cycleSong(+1));
+
 const songPlayer = new SongPlayer({
-  song: TINES_AND_TIME,
   getChord: getChordForSong,
   applyScene: applySongScene,
   sendCC: sendCCToPhase8,
   onScene: (params, idx, total) => {
-    $("np-chord").textContent = `♫ ${TINES_AND_TIME.title} — ${params.name} (${idx + 1}/${total})`;
+    const title = SONGS[state.songIndex].title;
+    $("np-chord").textContent = `♫ ${title} — ${params.name} (${idx + 1}/${total})`;
     $("np-note").textContent  = params.notes && params.notes.length === 1
       ? nameOf(params.notes[0])
       : params.notes && params.notes.length === 0
@@ -510,27 +536,47 @@ const songPlayer = new SongPlayer({
   onEnd: () => {
     songBtn.classList.remove("armed");
     state.songPlaying = false;
+    restoreKeyAfterSong();
     stopSched();
     $("np-chord").textContent = "—";
   },
 });
 
-state.songPlaying = false;
+function applySongKeyMode(song) {
+  state.savedKey  = state.key;
+  state.savedMode = state.mode;
+  state.key  = song.key  || state.key;
+  state.mode = song.mode || state.mode;
+  $("sel-key").value  = state.key;
+  $("sel-mode").value = state.mode;
+  refreshChords();
+}
+function restoreKeyAfterSong() {
+  if (state.savedKey === null) return;
+  state.key  = state.savedKey;
+  state.mode = state.savedMode;
+  $("sel-key").value  = state.key;
+  $("sel-mode").value = state.mode;
+  refreshChords();
+  state.savedKey = state.savedMode = null;
+}
 
 function startSong() {
   if (state.songPlaying) return;
   if (sched.running) stopSched();
-  // Start scheduler with the first scene's BPM placeholder (will be overridden immediately).
-  arp.setChord([]); // no chord until first scene fires
+  const song = SONGS[state.songIndex];
+  applySongKeyMode(song);
+  arp.setChord([]); // first scene fires immediately and supplies the chord
   startSched();
   state.songPlaying = true;
   songBtn.classList.add("armed");
-  songPlayer.play();
+  songPlayer.play(song);
 }
 function stopSong() {
   songPlayer.stop();
   state.songPlaying = false;
   songBtn.classList.remove("armed");
+  restoreKeyAfterSong();
   midi.panic();
   for (const t of tinesEl.children) t.classList.remove("active");
   $("np-chord").textContent = "—";

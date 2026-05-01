@@ -9,6 +9,7 @@ import { tests as integration } from "./integration.test.js";
 import { tests as flow }        from "./flow.test.js";
 import { tests as p8mode }      from "./phase8mode.test.js";
 import { tests as song }        from "./song.test.js";
+import { tests as songs }       from "./songs.test.js";
 
 // Syntax-check every src/*.js file with `node --check` so we catch parse
 // errors in modules unit tests don't import (e.g. midi.js, app.js).
@@ -40,6 +41,7 @@ const suites = [
   ["flow",        flow],
   ["phase8 mode", p8mode],
   ["song",        song],
+  ["songs",       songs],
 ];
 
 const c = (s, n) => `\x1b[${n}m${s}\x1b[0m`;

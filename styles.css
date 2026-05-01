@@ -201,6 +201,66 @@ body::after {
   width: auto; padding: 0 10px; font-size: 10px; letter-spacing: 0.18em;
   font-family: "SF Mono", "Menlo", monospace; color: var(--brass-hi);
 }
+
+/* Song picker: chevrons + amber phosphor title screen, like a tape-deck display. */
+.song-pick {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-1);
+  border: 1px solid #06070b;
+  border-radius: var(--r-md);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+  height: 38px;
+}
+.song-cycle {
+  width: 22px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--brass);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.1s var(--ease);
+}
+.song-cycle:hover { color: var(--amber); }
+.song-cycle:active { transform: scale(0.92); }
+.song-screen {
+  min-width: 190px;
+  padding: 4px 10px;
+  background: linear-gradient(180deg, #1a0d04 0%, #0d0703 100%);
+  border-left: 1px solid #06070b;
+  border-right: 1px solid #06070b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+  box-shadow: inset 0 0 12px rgba(255,170,60,0.04);
+}
+.song-title {
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--amber);
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-shadow: 0 0 8px rgba(255, 170, 60, 0.3);
+}
+.song-subtitle {
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 8px;
+  color: var(--brass-lo);
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
 .t-btn.test:hover, .t-btn.song:hover { color: var(--amber); box-shadow: inset 0 0 8px rgba(255,170,60,0.18), 0 2px 4px rgba(0,0,0,0.4); }
 .t-btn.song.armed {
   color: var(--led-r);

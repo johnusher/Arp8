@@ -27,7 +27,15 @@
 
     <div class="transport">
       <button class="t-btn test"  id="btn-test"   title="send a test C3 to verify MIDI path">TEST</button>
-      <button class="t-btn song"  id="btn-song"   title="play the bundled 2-min composition (full CC automation)">SONG</button>
+      <div class="song-pick" id="song-pick">
+        <button class="song-cycle" id="song-prev" title="previous song">◀</button>
+        <div class="song-screen" id="song-screen">
+          <div class="song-title"     id="song-title">Tines &amp; Time</div>
+          <div class="song-subtitle"  id="song-subtitle">axis pop · cage · 2 min</div>
+        </div>
+        <button class="song-cycle" id="song-next" title="next song">▶</button>
+      </div>
+      <button class="t-btn song"  id="btn-song"   title="play / stop the selected song">SONG</button>
       <button class="t-btn play"  id="btn-play"   title="space">▶</button>
       <button class="t-btn stop"  id="btn-stop"   title="space">■</button>
       <button class="t-btn panic" id="btn-panic"  title="all-notes-off">⌧</button>

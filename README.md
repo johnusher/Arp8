@@ -12,31 +12,38 @@ It's built around the assumption that you're a music novice (chord pads labelled
 
 ![Chord pattern detail](docs/chords-detail.png)
 
-## The SONG button — "Tines & Time"
+## The SONG button — eight bundled compositions
 
 ![SONG mode playing the bundled composition](docs/song-playing.png)
 
-Press SONG and ARP8 plays a 2-minute generative composition I wrote called *Tines & Time*. It's a single-take demonstration of every CC the phase8 exposes (per manual §12.0):
+Press SONG and ARP8 plays a complete generative composition. The transport has a song picker (◀ / amber title screen / ▶) — eight pieces, each a different musical territory using the same engine vocabulary differently:
 
-- **AIR slider** (CC 30) opens scene by scene — tight + dry intro, half-open verses, fully-open chorus near feedback territory, then exhales for the outro
-- **Mod Depth / Mod Rate** (CC 28/29) swell from settled in the verses to full psychedelic shimmer in the bridge
-- **Envelope per resonator** (CC 20–27) and **Velocity per resonator** (CC 12–19) get broadcast at scene boundaries, with a small per-slot random offset so the eight tines never behave identically
+| # | Title | Style | Key | BPM range | The hook |
+|---|---|---|---|---|---|
+| 1 | **Tines & Time** | axis pop + Pachelbel + Cage | C maj | 88 → 105 → 30 → 140 → 50 | tempo crashes, psychedelic chaos bridge, sudden burst climax |
+| 2 | **Prelude** | after Bach BWV 846 | C maj | 76 (locked) | continuous broken-chord arpeggios, no chaos, mathematical |
+| 3 | **Pulse** | after Steve Reich | A min | 132 | one chord held for 12+ bars, octaves slowly morph, hypnotic |
+| 4 | **Drift** | after Brian Eno | A min | 48 | chord pads with vast AIR, sparse phrases, lots of silence |
+| 5 | **Driver** | after John Carpenter | A min | 96 | descending ostinato, build / drop / drive, cinematic minor |
+| 6 | **Gymnopédie** | after Erik Satie | D min/dor | 60 | tender, simple, lots of pauses, soft velocity |
+| 7 | **Indeterminacy** | after John Cage | C maj | 35 → 200 (chance) | mostly single tines + silence, wild tempo swings, chaos = 0.8 |
+| 8 | **Choral** | after Arvo Pärt | C maj | 50 | tintinnabuli — held chord pads, long gates, sacred minimalism |
 
-**Structure**
-1. Intro (88 BPM, soft) — settles into C major
-2. Verse 1 (88 BPM) — classic I-V-vi axis pattern, simple up arp
-3. Sudden 1-bar **pause** — silence between verses
-4. Verse 2 (88 BPM) — same chords lifted to two octaves with updown
-5. Pre-chorus (88 BPM) — converge/diverge patterns build tension
-6. **Chorus** (105 BPM **tempo lift**) — vi-IV-I-V uplift, 3 octaves, AIR near max
-7. **Cage interlude** — slows to 60 BPM, then 30 BPM (almost stopped). Single tines repeat hypnotically: just C3, then just G3, then a single C4 at near-standstill, then total silence
-8. **Bridge** (78 BPM) — Pachelbel descent (vi-iii-IV) with full chaos (`chaos: 0.65` random-walks AIR + Mod CCs every beat — this is where it gets weird)
-9. **Burst** (140 BPM **sudden climax**) — single bar of full-chord stab at velocity 127
-10. Outro — decelerates 80 → 65 → 50 BPM, ending on a held I
+All eight are written for the default phase8 install (C major C3-C4). The minor-key songs run in A minor and the modal piece in D Dorian — both share the C-major scale notes so every chord lands on installed tines.
 
-Each scene specifies pattern, rate, octaves, gate, swing, velocity, BPM, and a CC payload. A `chaos` value (0–1) controls how much the player random-walks the global CCs every beat — set to 0 in the verses (stable timbre), spiked to 0.65 in the bridge (textural breakdown). The whole composition is in [`src/song.js`](src/song.js); the engine is [`SongPlayer`](src/song.js) and is fully unit-tested with the same virtual-clock harness as the arp scheduler.
+**What the engine drives during a song**
 
-The song forces phase8-friendly diatonic chords from the *current* key/scale, so you can press SONG in any key, but it was written for the default C major C3-C4 install.
+- **AIR slider** (CC 30) automated per-scene — tight + dry intros, near-max during chorus territory, fully-open during ambient / Cage sections
+- **Mod Depth / Mod Rate** (CC 28/29) swell from settled to psychedelic
+- **Envelope per resonator** (CC 20-27) and **Velocity per resonator** (CC 12-19) broadcast at scene boundaries with a small per-slot random offset so the eight tines never behave identically
+- **Per-scene BPM overrides** — sudden tempo drops to 30 BPM ("almost stopped"), bursts to 200 BPM
+- **Pauses** — `notes: []` empties the arp; the scheduler keeps ticking but nothing fires
+- **Cage-style single-tine repetition** — `notes: [48]` makes the arp hammer just C3 for two bars; combined with a low BPM = stuck-tone trance
+- **`chaos` parameter** (0..1) — random-walks global CCs every beat. 0 in the verses, spiked to 0.65-0.8 in the bridges and Indeterminacy
+
+Each composition lives in [`src/song.js`](src/song.js) as a list of scenes; the engine is [`SongPlayer`](src/song.js) and runs every song end-to-end against the virtual-clock test harness ([`test/songs.test.js`](test/songs.test.js)) to validate timing, CC payload, and pattern/rate correctness.
+
+The song picker stops the current song and starts the new one if you cycle while playing. Pressing a chord pad mid-song aborts the song and resumes normal arp playback. The song's key/mode is restored to your previous selection when it ends.
 
 ## Inspirations
 
@@ -49,11 +56,15 @@ The visual language is industrial / Berlin / Korg-Berlin. Deep concrete bg, brus
 - **Ableton Live's Arpeggiator.** Its pattern library is the canonical one — Up, Down, UpDown, Converge, Diverge, Played, Random, Random-Other, Random-Once, plus a "Chord" pattern that fires every note simultaneously. ARP8 implements all of them.
 - **Vintage gear amber displays.** The BPM screen, knob value readouts, and now-playing readout are all glowing amber on near-black, with subtle phosphor bloom.
 - **Berlin-techno colour-coded clip launchers.** The seven diatonic chord pads each take a colour from a curated nine-stop palette so a chord progression becomes a visual phrase.
-- **John Cage's prepared-piano sonatas** — single-tine repetition, sudden tempo shifts, near-silence bordered by sudden bursts. The "Cage interlude" in the bundled song crashes the BPM from 105 to 30 with one tine hammering, then pauses to nothing, then explodes at 140.
+- **John Cage's prepared-piano sonatas + "Music of Changes"** — single-tine repetition, sudden tempo shifts, near-silence bordered by sudden bursts. The "Cage interlude" in *Tines & Time* and the entire *Indeterminacy* song are direct nods.
+- **Bach's Prelude in C, BWV 846** — the first known great arpeggiator demo from 1722. *Prelude* in the song catalogue follows its locked-tempo, no-chaos broken-chord aesthetic.
+- **Steve Reich's "Music for 18 Musicians" / Brian Eno's "Music for Airports"** — long single-chord stretches with parameters slowly morphing, no harmonic motion. *Pulse* and *Drift* respectively.
+- **John Carpenter's score for "Halloween" / "Escape from New York"** — minor-key descending ostinato, cinematic synth bass, dynamic builds and drops. *Driver* leans into this.
+- **Erik Satie's Gymnopédies / Arvo Pärt's tintinnabuli** — tenderness through restraint, the spaces between notes carrying as much weight as the notes themselves. *Gymnopédie* and *Choral* respectively.
 
 ## Features
 
-- **SONG button** — plays *Tines & Time*, a 2-minute composition with full CC automation, tempo dynamics, pauses, and a Cage-style single-tine interlude (see above)
+- **SONG button + 8-song catalogue** — pieces inspired by Bach, Reich, Eno, Carpenter, Satie, Cage, Pärt; cycle with the ◀/▶ chevrons in the transport (see above)
 - **11 arpeggiator patterns** including all the Ableton standards
 - **7 rates** from 1/4 down to 1/32, plus 1/4T, 1/8T, 1/16T triplets
 - **Octave stacking** 1×–4×
@@ -133,7 +144,7 @@ The engine modules know nothing about the DOM or about Web MIDI. The scheduler t
 npm test
 ```
 
-72 tests across 8 suites:
+79 tests across 9 suites:
 
 - **syntax** — `node --check` every `src/*.js`, plus an import-resolution sanity test for `src/midi.js` (which the unit tests don't otherwise touch)
 - **chords** — note theory, diatonic chord generation in major / minor, `snapToTines` correctness including the note-class-preservation rule
@@ -143,6 +154,7 @@ npm test
 - **flow** — multi-bar progressions, latch behaviour, panic semantics
 - **phase8 mode** — STATIC / FREQUENCY / TRANSPOSED translation tables
 - **song** — composition shape (BPM variation, pauses, Cage scenes), scene timing under variable BPM, CC payload structure, chaos behaviour with seeded RNG
+- **songs** — catalogue-wide validation: every song in `SONGS` has valid pattern/rate/octaves/gate/velocity/BPM at every resolved scene, sensible total duration, and plays end-to-end against the virtual clock
 
 ## Browser support
 
