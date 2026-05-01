@@ -331,167 +331,460 @@ export const CHORAL = {
 };
 
 // ──────────────────────────────────────────────────────────────────────────
-// CLASSICAL CATALOGUE — 20 famous pieces transposed to a key the phase8's
-// default C-major install can play (major pieces → C major, minor pieces →
-// A minor; both use only the white keys / C-major scale notes).
+// CLASSICAL CATALOGUE — sacred, organ, drone, minimalist. NOT the orchestral
+// "bangers" — these pieces lean into the phase8's strengths: sustained tones,
+// modal harmony, slow-evolving texture. Most are *played as melodies* (using
+// pattern: "played" + explicit `notes:` arrays), not just rolled chord arps.
 //
-// Each piece is defined as a metadata row with composer, BPM, mode, arpeggio
-// pattern, rate, and the *chord-degree* progression (0=I, 1=ii, ... 6=vii°).
-// The `classicalToSong` generator below expands each row into a full song
-// with intro / build passes / outro and inherited CC settings, picking enough
-// loops to land each piece between 75 and 150 seconds.
+// All pitched within the default C-major C3..C4 install (MIDI 48..60). Major
+// pieces sit in C major; minor / modal pieces sit in A minor (which uses the
+// same scale notes), and Phrygian / Dorian etc. use the closest fit.
 // ──────────────────────────────────────────────────────────────────────────
 
-// Chord degrees per piece. Verified against published harmonic analyses where
-// possible (Pachelbel I-V-vi-iii-IV-I-IV-V; Moonlight broken-chord arpeggios
-// over i-VI-iv-V; Bach inventions and minuets reduced to their diatonic
-// skeleton; etc.). Some Romantic/Impressionist pieces use chromatic harmony
-// the engine can't reproduce — those are reduced to the closest diatonic
-// outline that still evokes the source.
-const CLASSICAL = [
-  // major-key pieces ────────────────────────────────────────────────────
-  { title: "Pachelbel — Canon",          composer: "Pachelbel",  year: 1680,
-    bpm: 60,  mode: "major", pattern: "up",     rate: "1/8",
-    chords: [0,4,5,2,3,0,3,4] },                                  // I V vi iii IV I IV V
+// Tine MIDI quick reference (default C-major install):
+//   C3=48  D3=50  E3=52  F3=53  G3=55  A3=57  B3=59  C4=60
+// Above 60 (octaves=2): C5=72, etc. Engine quantises any unsupported pitches
+// back onto installed tines, so writing melodies inside 48..60 is safest.
+const _baseCC = { air: 50, modDepth: 6, modRate: 22, envelope: 95 };
 
-  { title: "Bach — Air on the G String", composer: "J.S. Bach",  year: 1730,
-    bpm: 56,  mode: "major", pattern: "up",     rate: "1/8",
-    chords: [0,5,1,4,0,3,4,0] },                                  // I vi ii V I IV V I
+// helper to build a "played-melody" scene compactly
+const m = (name, bars, notes, opts = {}) => ({
+  name, bars, notes, pattern: "played", rate: opts.rate || "1/4",
+  octaves: opts.oct || 1, gate: opts.gate ?? 0.85, swing: 0, velocity: opts.vel || 75,
+  ...(opts.bpm    && { bpm: opts.bpm }),
+  ...(opts.cc     && { cc: opts.cc }),
+  ...(opts.chaos !== undefined && { chaos: opts.chaos }),
+});
+// helper for a "chord pad" scene (sustained chord)
+const c = (name, bars, chord, opts = {}) => ({
+  name, bars, chord, pattern: "chord", rate: opts.rate || "1/4",
+  octaves: opts.oct || 1, gate: opts.gate ?? 0.95, swing: 0, velocity: opts.vel || 70,
+  ...(opts.bpm    && { bpm: opts.bpm }),
+  ...(opts.cc     && { cc: opts.cc }),
+  ...(opts.chaos !== undefined && { chaos: opts.chaos }),
+});
+// helper for a "note rest" silence scene
+const rest = (bars, opts = {}) => ({ name: "·· rest", bars, notes: [], cc: { air: opts.air || 70 } });
 
-  { title: "Bach — Jesu, Joy of Man's Desiring", composer: "J.S. Bach", year: 1723,
-    bpm: 78,  mode: "major", pattern: "up",     rate: "1/8",
-    chords: [0,1,2,3,4,0,5,1,4,0] },                              // I ii iii IV V I vi ii V I
+// 1 — Pachelbel Canon: melodic variation over the iconic 8-chord ostinato
+const PACHELBEL_CANON = {
+  title: "Pachelbel — Canon", subtitle: "Pachelbel · 1680 · played in C major",
+  bpm: 60, key: "C", mode: "major",
+  scenes: [
+    c("intro",   2, 0, { bpm: 60, vel: 60, cc: { ..._baseCC, velocity: 60 }, chaos: 0 }),
+    // chord-arp pass through I-V-vi-iii-IV-I-IV-V
+    { name: "I",   bars: 1, chord: 0, pattern: "up", rate: "1/8", octaves: 1, gate: 0.5, velocity: 75 },
+    { name: "V",   bars: 1, chord: 4 }, { name: "vi", bars: 1, chord: 5 }, { name: "iii", bars: 1, chord: 2 },
+    { name: "IV",  bars: 1, chord: 3 }, { name: "I",  bars: 1, chord: 0 }, { name: "IV",  bars: 1, chord: 3 },
+    { name: "V",   bars: 1, chord: 4 },
+    // Canon melody pass: descending & ascending scalar fragments per chord
+    m("mel·I",   1, [60,59,57,55,57,55,53,52], { rate: "1/8", vel: 90, cc: { air: 65 } }),
+    m("mel·V",   1, [55,52,50,55,53,52,50,55]),
+    m("mel·vi",  1, [57,55,52,57,55,52,50,52]),
+    m("mel·iii", 1, [52,55,52,55,53,55,53,52]),
+    m("mel·IV",  1, [53,52,50,48,50,52,53,55]),
+    m("mel·I",   1, [55,52,48,52,55,57,55,52]),
+    m("mel·IV",  1, [53,55,57,55,53,52,50,53]),
+    m("mel·V",   1, [55,53,50,52,53,55,57,55]),
+    // Final pass: full chord arp, octaves 2
+    { name: "I°",   bars: 1, chord: 0, pattern: "up", rate: "1/16", octaves: 2, velocity: 105, cc: { air: 80 } },
+    { name: "V°",   bars: 1, chord: 4 }, { name: "vi°", bars: 1, chord: 5 }, { name: "iii°", bars: 1, chord: 2 },
+    { name: "IV°",  bars: 1, chord: 3 }, { name: "I°",  bars: 1, chord: 0 }, { name: "IV°",  bars: 1, chord: 3 },
+    { name: "V°",   bars: 1, chord: 4 },
+    c("amen", 4, 0, { gate: 0.99, vel: 60, cc: { air: 25, envelope: 105, velocity: 60 } }),
+  ],
+};
 
-  { title: "Bach — Cello Suite No. 1 Prelude", composer: "J.S. Bach", year: 1720,
-    bpm: 84,  mode: "major", pattern: "up",     rate: "1/16",
-    chords: [0,3,4,0,5,3,4,0] },                                  // I IV V I vi IV V I
+// 2 — Bach Air on the G String (transposed C major) — slow sustained melody
+const BACH_AIR = {
+  title: "Bach — Air on the G String", subtitle: "J.S. Bach · 1730 · played in C major",
+  bpm: 56, key: "C", mode: "major",
+  scenes: [
+    c("intro", 2, 0, { bpm: 56, vel: 55, cc: { ..._baseCC, velocity: 55 }, chaos: 0 }),
+    // The famous "Air" melody — long held high tone then descending phrases.
+    // Pitch-reduced to fit C3..C4. 1/4 rate so each note is a half-bar pulse.
+    m("phrase·1", 2, [60, 60, 60, 60, 57, 55, 53, 52], { rate: "1/4", vel: 78, cc: { air: 60 } }),
+    c("I",  1, 0, { gate: 0.95, vel: 70 }),
+    c("V",  1, 4),
+    m("phrase·2", 2, [57, 55, 53, 52, 53, 55, 53, 52]),
+    c("vi", 1, 5),
+    c("ii", 1, 1),
+    m("phrase·3", 2, [55, 53, 52, 50, 52, 50, 48, 50], { vel: 85, cc: { air: 70 } }),
+    c("V", 1, 4), c("I", 1, 0),
+    m("phrase·4·high", 2, [60, 59, 57, 55, 57, 60, 59, 57], { oct: 2, vel: 92, cc: { air: 80 } }),
+    c("amen", 4, 0, { gate: 0.99, vel: 60, cc: { air: 25, envelope: 105, velocity: 60 } }),
+  ],
+};
 
-  { title: "Bach — Minuet in G",         composer: "J.S. Bach",  year: 1725,
-    bpm: 110, mode: "major", pattern: "up",     rate: "1/8",
-    chords: [0,4,0,3,4,0,4,0,3,4,0] },                            // I V I IV V I // V I IV V I
+// 3 — Bach Jesu, Joy of Man's Desiring — flowing scalar melody over diatonic chords
+const BACH_JESU_JOY = {
+  title: "Bach — Jesu, Joy of Man's Desiring", subtitle: "J.S. Bach · 1723 · played in C major",
+  bpm: 80, key: "C", mode: "major",
+  scenes: [
+    c("intro", 2, 0, { bpm: 80, rate: "1/8", vel: 60, cc: { ..._baseCC, velocity: 60 }, chaos: 0 }),
+    // First verse — flowing 9/8-style triplet phrases
+    m("flow·1", 2, [48, 50, 52, 53, 55, 57, 55, 53, 52, 50, 52, 53], { rate: "1/8", vel: 80, cc: { air: 50 } }),
+    m("flow·2", 2, [50, 52, 53, 55, 57, 59, 57, 55, 53, 52, 53, 55]),
+    m("flow·3", 2, [52, 53, 55, 57, 59, 60, 59, 57, 55, 53, 55, 57], { vel: 90 }),
+    m("flow·4", 2, [55, 57, 59, 60, 57, 55, 53, 52, 50, 48, 50, 52], { vel: 92, cc: { air: 65 } }),
+    // Second verse — same shape, octaves up
+    m("flow·5", 2, [48, 52, 55, 57, 60, 57, 55, 52, 53, 55, 57, 55], { oct: 2, vel: 98, cc: { air: 75 } }),
+    m("flow·6", 2, [50, 52, 55, 57, 60, 59, 57, 55, 53, 52, 53, 55], { oct: 2, vel: 100 }),
+    m("flow·7", 2, [52, 55, 57, 60, 59, 57, 55, 53, 52, 50, 52, 53], { oct: 2, vel: 102 }),
+    m("flow·8", 2, [55, 57, 60, 59, 57, 55, 53, 52, 50, 48, 50, 52], { oct: 2, vel: 100 }),
+    c("amen", 4, 0, { gate: 0.99, vel: 65, cc: { air: 30, envelope: 110, velocity: 65 } }),
+  ],
+};
 
-  { title: "Bach — Invention No. 1 in C",composer: "J.S. Bach",  year: 1723,
-    bpm: 92,  mode: "major", pattern: "up",     rate: "1/16",
-    chords: [0,4,0,3,0,4,5,1,4,0] },                              // I V I IV I V vi ii V I
+// 4 — Bach Toccata in D minor BWV 565 — the iconic organ opening gesture
+const BACH_TOCCATA = {
+  title: "Bach — Toccata in D minor", subtitle: "J.S. Bach · 1707 · BWV 565 · A minor",
+  bpm: 80, key: "A", mode: "minor",
+  scenes: [
+    // Iconic opening: A-G-A (mordent feel) then long held A — three times, descending
+    m("call·1", 1, [57, 55, 57], { bpm: 80, rate: "1/16", oct: 1, vel: 110, gate: 0.6, cc: { air: 70, modDepth: 30, envelope: 95, velocity: 110 }, chaos: 0.05 }),
+    c("hold·1", 2, 0, { gate: 0.99, vel: 95 }),
+    m("call·2", 1, [52, 50, 52], { vel: 110 }),
+    c("hold·2", 2, 0, { vel: 90 }),
+    m("call·3", 1, [48, 47, 48], { vel: 115 }),
+    c("hold·3", 3, 0, { gate: 0.99, vel: 85 }),
+    // Diminished-chord passage — vii° for the dramatic suspended feel
+    { name: "vii°", bars: 1, chord: 6, pattern: "down", rate: "1/16", octaves: 2, gate: 0.5, velocity: 110, cc: { air: 90, modDepth: 60 }, chaos: 0.1 },
+    { name: "V",    bars: 1, chord: 4, pattern: "down" },
+    { name: "i",    bars: 2, chord: 0, pattern: "up",   rate: "1/16", octaves: 2, vel: 110 },
+    // Cascading flourish — descending scale fragments at high speed
+    m("flourish·1", 2, [60, 59, 57, 55, 53, 52, 50, 48, 60, 59, 57, 55, 53, 52, 50, 48, 60, 59, 57, 55, 53, 52, 50, 48, 60, 59, 57, 55, 53, 52, 50, 48], { rate: "1/16", oct: 2, vel: 120, gate: 0.5, cc: { air: 100, modDepth: 80 }, chaos: 0.12 }),
+    m("flourish·2", 2, [48, 50, 52, 53, 55, 57, 59, 60, 48, 50, 52, 53, 55, 57, 59, 60, 48, 50, 52, 53, 55, 57, 59, 60, 48, 50, 52, 53, 55, 57, 59, 60], { rate: "1/16", oct: 2, vel: 122, cc: { air: 105 }, chaos: 0.15 }),
+    // Final massive chord
+    c("ENDING", 4, 0, { gate: 0.99, vel: 90, cc: { air: 60, envelope: 120, velocity: 90 } }),
+    c("amen",   2, 0, { gate: 0.99, vel: 70, cc: { air: 30, envelope: 125, velocity: 70 } }),
+  ],
+};
 
-  { title: "Bach — Sheep May Safely Graze", composer: "J.S. Bach", year: 1713,
-    bpm: 60,  mode: "major", pattern: "up",     rate: "1/8",
-    chords: [0,4,5,3,0,4,0,3,4,0] },
+// 5 — Bach Cello Suite No. 1 Prelude — naturally an arpeggio
+const BACH_CELLO_PRELUDE = {
+  title: "Bach — Cello Suite No. 1 Prelude", subtitle: "J.S. Bach · 1720 · transposed to C major",
+  bpm: 84, key: "C", mode: "major",
+  scenes: [
+    { name: "intro", bars: 2, chord: 0, bpm: 84, pattern: "up", rate: "1/16", octaves: 1, gate: 0.5, swing: 0, velocity: 75, cc: { ..._baseCC, velocity: 75 }, chaos: 0 },
+    // First pass through chord cycle
+    { name: "I",   bars: 1, chord: 0 }, { name: "IV", bars: 1, chord: 3 }, { name: "V",  bars: 1, chord: 4 }, { name: "I",  bars: 1, chord: 0 },
+    { name: "vi",  bars: 1, chord: 5 }, { name: "IV", bars: 1, chord: 3 }, { name: "V",  bars: 1, chord: 4 }, { name: "I",  bars: 1, chord: 0 },
+    // Second pass — octaves up
+    { name: "ii", bars: 1, chord: 1, octaves: 2, velocity: 90, cc: { air: 70 } },
+    { name: "V·b",  bars: 1, chord: 4 }, { name: "I·b",  bars: 1, chord: 0 }, { name: "V·c",  bars: 1, chord: 4 },
+    { name: "I°2",  bars: 1, chord: 0 }, { name: "IV·b", bars: 1, chord: 3 }, { name: "vi·b", bars: 1, chord: 5 }, { name: "V·d", bars: 1, chord: 4 },
+    // Third pass — full octaves
+    { name: "I°3", bars: 1, chord: 0, octaves: 2, velocity: 105, cc: { air: 85 } },
+    { name: "vii°",bars: 1, chord: 6 }, { name: "iii", bars: 1, chord: 2 }, { name: "vi°",bars: 1, chord: 5 },
+    { name: "ii°", bars: 1, chord: 1 }, { name: "V°",  bars: 1, chord: 4 }, { name: "I·hold", bars: 2, chord: 0, octaves: 2 },
+    c("amen", 4, 0, { gate: 0.99, vel: 65, cc: { air: 30, envelope: 110, velocity: 65 } }),
+  ],
+};
 
-  { title: "Handel — Hallelujah Chorus", composer: "Handel",     year: 1741,
-    bpm: 92,  mode: "major", pattern: "chord",  rate: "1/4",
-    chords: [0,4,0,4,5,2,3,0,3,4,0] },                            // chord-stab style
+// 6 — Bach Passacaglia in C minor BWV 582 — 8-bar bass ostinato with variations
+const BACH_PASSACAGLIA = {
+  title: "Bach — Passacaglia in C minor", subtitle: "J.S. Bach · 1707 · BWV 582 · organ in A minor",
+  bpm: 64, key: "A", mode: "minor",
+  scenes: [
+    // First the bass ostinato played alone — 8 notes descending in A minor (transposed from C minor)
+    m("ostinato·1", 4, [57, 55, 53, 52, 50, 48, 50, 53], { bpm: 64, rate: "1/4", oct: 1, vel: 75, gate: 0.85, cc: { ..._baseCC, velocity: 75 }, chaos: 0 }),
+    // Variations layer chord pads on the same bass
+    c("var·1·i",   2, 0, { vel: 80, cc: { air: 55 } }),
+    c("var·1·VII", 1, 6),
+    c("var·1·VI",  1, 5),
+    c("var·1·V",   2, 4),
+    // Second pass with octaves up
+    m("ostinato·2", 4, [57, 55, 53, 52, 50, 48, 50, 53], { oct: 2, vel: 95, cc: { air: 75 } }),
+    c("var·2·i",   2, 0, { oct: 2, vel: 100 }),
+    c("var·2·iv",  2, 3, { oct: 2 }),
+    c("var·2·V",   2, 4, { oct: 2 }),
+    c("amen", 4, 0, { gate: 0.99, vel: 70, cc: { air: 30, envelope: 110, velocity: 70 } }),
+  ],
+};
 
-  { title: "Mozart — Eine kleine Nachtmusik", composer: "Mozart",year: 1787,
-    bpm: 130, mode: "major", pattern: "up",     rate: "1/8",
-    chords: [0,4,0,4,0,3,4,0,4,0] },
+// 7 — Schubert Ave Maria — sacred melodic
+const SCHUBERT_AVE_MARIA = {
+  title: "Schubert — Ave Maria", subtitle: "Schubert · 1825 · played in C major",
+  bpm: 60, key: "C", mode: "major",
+  scenes: [
+    c("intro", 2, 0, { bpm: 60, vel: 55, cc: { ..._baseCC, velocity: 55 }, chaos: 0 }),
+    // "A-ve Ma-ri-a" - simplified melodic shape: ascending then descending
+    m("verse·1", 4, [55, 60, 59, 60, 57, 55, 53, 55, 57, 55, 53, 52, 50, 48, 50, 52], { rate: "1/4", vel: 78, cc: { air: 55 } }),
+    c("I",  1, 0, { gate: 0.95 }),
+    c("IV", 1, 3),
+    m("verse·2", 4, [57, 60, 59, 57, 55, 53, 52, 50, 52, 55, 53, 52, 50, 48, 50, 53], { vel: 85 }),
+    c("ii", 1, 1, { gate: 0.95 }),
+    c("V",  1, 4),
+    m("climax", 4, [60, 60, 59, 57, 55, 57, 60, 59, 57, 55, 53, 52, 53, 50, 48, 50], { oct: 2, vel: 95, cc: { air: 70 } }),
+    c("amen", 4, 0, { gate: 0.99, vel: 60, cc: { air: 30, envelope: 110, velocity: 60 } }),
+  ],
+};
 
-  { title: "Mozart — Sonata K. 545",     composer: "Mozart",     year: 1788,
-    bpm: 96,  mode: "major", pattern: "up",     rate: "1/16",
-    chords: [0,4,0,3,0,4,0,5,4,0] },                              // I V I IV I V I vi V I
+// 8 — Satie Gymnopédie No. 1 — gentle melody, sparse harmony
+const SATIE_GYM_1 = {
+  title: "Satie — Gymnopédie No. 1", subtitle: "Satie · 1888 · played in C major",
+  bpm: 70, key: "C", mode: "major",
+  scenes: [
+    c("intro·I",  2, 0, { bpm: 70, vel: 55, cc: { ..._baseCC, velocity: 55 }, chaos: 0 }),
+    c("intro·IV", 2, 3, { vel: 55 }),
+    // Famous descending melody: F# E D B (in D major) → in C: E D C A
+    m("mel·1", 2, [52, 50, 48, 57, 52, 50, 48, 57], { rate: "1/4", vel: 75, cc: { air: 50 } }),
+    c("I",  2, 0), c("IV", 2, 3),
+    m("mel·2", 2, [55, 53, 52, 50, 55, 53, 52, 50]),
+    c("vi", 2, 5), c("ii", 2, 1),
+    m("mel·3", 2, [60, 59, 57, 55, 53, 52, 50, 48], { oct: 1, vel: 80 }),
+    c("V",  2, 4), c("I",  2, 0),
+    c("amen", 4, 0, { gate: 0.99, vel: 55, cc: { air: 25, envelope: 110, velocity: 55 } }),
+  ],
+};
 
-  { title: "Vivaldi — Spring (Allegro)", composer: "Vivaldi",    year: 1723,
-    bpm: 116, mode: "major", pattern: "up",     rate: "1/16",
-    chords: [0,4,0,4,0,3,4,0,1,4,0] },
+// 9 — Albinoni Adagio — sacred-feeling melody with descending lines
+const ALBINONI_ADAGIO = {
+  title: "Albinoni — Adagio in G minor", subtitle: "Albinoni / Giazotto · 1958 · played in A minor",
+  bpm: 50, key: "A", mode: "minor",
+  scenes: [
+    c("intro", 2, 0, { bpm: 50, vel: 55, cc: { ..._baseCC, velocity: 55 }, chaos: 0 }),
+    // Famous descending melodic line with sigh-like phrasing
+    m("phrase·1", 4, [57, 55, 53, 52, 50, 53, 52, 50, 48, 50, 52, 53, 55, 53, 52, 50], { rate: "1/4", vel: 78, cc: { air: 60 } }),
+    c("i",  2, 0, { gate: 0.99, vel: 70 }),
+    c("VI", 2, 5),
+    m("phrase·2", 4, [55, 53, 52, 50, 48, 50, 52, 53, 55, 53, 52, 50, 48, 47, 48, 50], { vel: 82 }),
+    c("V",  2, 4),
+    c("i",  2, 0),
+    m("climb", 4, [48, 50, 52, 53, 55, 57, 60, 59, 57, 55, 53, 52, 50, 48, 50, 52], { oct: 2, vel: 90, cc: { air: 75 } }),
+    c("amen", 4, 0, { gate: 0.99, vel: 60, cc: { air: 30, envelope: 115, velocity: 60 } }),
+  ],
+};
 
-  { title: "Beethoven — Ode to Joy",     composer: "Beethoven",  year: 1824,
-    bpm: 108, mode: "major", pattern: "played", rate: "1/4",
-    chords: [0,0,3,0,4,0,3,0,0,4,0] },                            // melody-style
+// 10 — Carl Orff "O Fortuna" — iconic descending phrase, modal
+const ORFF_O_FORTUNA = {
+  title: "Orff — O Fortuna", subtitle: "Carl Orff · 1936 · Carmina Burana · A minor",
+  bpm: 78, key: "A", mode: "minor",
+  scenes: [
+    // The iconic SLAM: i-iv-i, three loud chord stabs
+    c("slam·1", 1, 0, { bpm: 78, gate: 0.4, vel: 127, cc: { air: 95, modDepth: 75, envelope: 80, velocity: 127 }, chaos: 0.1 }),
+    c("slam·2", 1, 3, { gate: 0.4, vel: 127 }),
+    c("slam·3", 1, 0, { gate: 0.4, vel: 127 }),
+    rest(1, { air: 80 }),
+    // Hushed chant section: "O for-tu-na, ve-lut lu-na, sta-tu var-i-a-bi-lis"
+    m("chant·1", 2, [57, 55, 53, 55, 57, 57, 53, 55], { rate: "1/4", vel: 75, gate: 0.6, cc: { air: 70 } }),
+    m("chant·2", 2, [57, 55, 53, 52, 53, 55, 53, 52], { vel: 78 }),
+    m("chant·3", 2, [55, 53, 52, 50, 52, 53, 55, 53], { vel: 82 }),
+    m("chant·4", 2, [55, 53, 50, 48, 50, 52, 53, 55], { vel: 88 }),
+    // Build with the choral chords — i-VII-VI-V
+    c("i",   1, 0, { vel: 105 }), c("VII", 1, 6, { vel: 110 }),
+    c("VI",  1, 5, { vel: 115 }), c("V",   1, 4, { vel: 120 }),
+    // Hammered final chant ascending
+    m("hammer·1", 2, [57, 55, 53, 52, 50, 48, 50, 52], { oct: 2, vel: 122, gate: 0.4, cc: { air: 100 }, chaos: 0.15 }),
+    m("hammer·2", 2, [48, 50, 52, 53, 55, 57, 55, 60], { oct: 2, vel: 125, cc: { air: 105 } }),
+    // Final crash chord
+    c("CRASH", 2, 0, { gate: 0.5, vel: 127, cc: { air: 110, modDepth: 90, envelope: 95 }, chaos: 0.2 }),
+    c("end",   3, 0, { gate: 0.99, vel: 75, cc: { air: 35, envelope: 120, velocity: 75 } }),
+  ],
+};
 
-  { title: "Schubert — Ave Maria",       composer: "Schubert",   year: 1825,
-    bpm: 60,  mode: "major", pattern: "up",     rate: "1/8",
-    chords: [0,3,4,0,5,1,4,0] },
+// 11 — Pärt Spiegel im Spiegel — F major slow descending scale + held tonic
+const PART_SPIEGEL = {
+  title: "Pärt — Spiegel im Spiegel", subtitle: "Arvo Pärt · 1978 · tintinnabuli in C major",
+  bpm: 50, key: "C", mode: "major",
+  scenes: [
+    c("hold·1", 6, 0, { bpm: 50, vel: 55, cc: { ..._baseCC, air: 80, velocity: 55 }, chaos: 0 }),
+    // Slow melodic descents — m-voice (scalar) + held t-voice (chord)
+    m("descend·1", 4, [60, 59, 57, 55, 53, 52, 50, 48], { rate: "1/4", vel: 60, gate: 0.95, cc: { air: 85 } }),
+    c("hold·2", 4, 0, { vel: 55 }),
+    m("descend·2", 4, [60, 59, 57, 55, 53, 52, 50, 48], { vel: 65 }),
+    c("hold·3", 4, 4, { vel: 55 }), // shift to V
+    m("descend·3", 4, [55, 53, 52, 50, 48, 50, 52, 53], { vel: 60 }),
+    c("hold·4", 4, 0, { vel: 50 }),
+    c("amen",   6, 0, { gate: 0.99, vel: 50, cc: { air: 60, envelope: 120, velocity: 50 } }),
+  ],
+};
 
-  { title: "Satie — Gymnopédie No. 1",   composer: "Satie",      year: 1888,
-    bpm: 70,  mode: "major", pattern: "up",     rate: "1/8",
-    chords: [0,3,0,4,0,3,1,4,0] },                                // I IV-pedal feel
+// 12 — Pärt Für Alina — sparse, single voice, B minor → A minor
+const PART_FUR_ALINA = {
+  title: "Pärt — Für Alina", subtitle: "Arvo Pärt · 1976 · tintinnabuli in A minor",
+  bpm: 40, key: "A", mode: "minor",
+  scenes: [
+    rest(2, { air: 90 }),
+    // Just slow descending pairs — m-voice (scale) over t-voice (i held)
+    m("dyad·1", 4, [60, 57, 59, 57], { bpm: 40, rate: "1/4", oct: 1, vel: 50, gate: 0.95, cc: { ..._baseCC, air: 95, envelope: 120, velocity: 50 }, chaos: 0 }),
+    rest(1, { air: 95 }),
+    m("dyad·2", 4, [57, 55, 53, 52], { vel: 55 }),
+    rest(1, { air: 95 }),
+    m("dyad·3", 4, [55, 53, 52, 50], { vel: 55 }),
+    rest(1, { air: 95 }),
+    m("dyad·4", 4, [52, 50, 48, 50], { vel: 60 }),
+    rest(2, { air: 100 }),
+    c("breath", 4, 0, { gate: 0.99, vel: 45, cc: { air: 60, envelope: 125, velocity: 45 } }),
+  ],
+};
 
-  { title: "Debussy — Clair de Lune",    composer: "Debussy",    year: 1905,
-    bpm: 50,  mode: "major", pattern: "up",     rate: "1/16",
-    chords: [0,4,0,3,5,1,4,0] },
+// 13 — Pärt Cantus in Memoriam Britten — descending A minor scale at varying rates
+const PART_CANTUS = {
+  title: "Pärt — Cantus in Memoriam Britten", subtitle: "Arvo Pärt · 1977 · A minor descent",
+  bpm: 60, key: "A", mode: "minor",
+  scenes: [
+    rest(1, { air: 100 }),
+    // The cantus IS just the A natural minor scale descending, played at various rates.
+    m("descent·slow", 4, [60, 59, 57, 55, 53, 52, 50, 48], { bpm: 60, rate: "1/4", oct: 1, vel: 60, gate: 0.9, cc: { ..._baseCC, air: 90, velocity: 60 }, chaos: 0 }),
+    m("descent·mid",  4, [60, 59, 57, 55, 53, 52, 50, 48, 60, 59, 57, 55, 53, 52, 50, 48], { rate: "1/8", vel: 75 }),
+    m("descent·fast", 4, [60, 59, 57, 55, 53, 52, 50, 48, 60, 59, 57, 55, 53, 52, 50, 48, 60, 59, 57, 55, 53, 52, 50, 48, 60, 59, 57, 55, 53, 52, 50, 48], { rate: "1/16", oct: 2, vel: 85, cc: { air: 100 } }),
+    c("hold·i", 6, 0, { gate: 0.99, vel: 65, cc: { air: 95, envelope: 125 } }),
+    c("amen",   4, 0, { gate: 0.99, vel: 50, cc: { air: 50, envelope: 127, velocity: 50 } }),
+  ],
+};
 
-  // minor-key pieces ────────────────────────────────────────────────────
-  { title: "Handel — Sarabande in D minor", composer: "Handel",  year: 1733,
-    bpm: 56,  mode: "minor", pattern: "chord",  rate: "1/4",
-    chords: [0,4,0,3,4,0,6,2,3,4,0] },
+// 14 — Pärt Fratres — drone of A-E with descending modal motif
+const PART_FRATRES = {
+  title: "Pärt — Fratres", subtitle: "Arvo Pärt · 1977 · A minor drone",
+  bpm: 70, key: "A", mode: "minor",
+  scenes: [
+    // Drone: A and E held (open 5th feel) — slow pulse at 1/4 with high gate
+    m("drone·intro", 4, [48, 55, 48, 55], { bpm: 70, rate: "1/4", oct: 1, vel: 50, gate: 0.99, cc: { ..._baseCC, air: 95, envelope: 125, velocity: 50 }, chaos: 0 }),
+    m("motif·1", 4, [57, 55, 53, 52, 53, 55, 57, 60], { rate: "1/4", vel: 65, gate: 0.85 }),
+    c("drone", 4, 0, { gate: 0.99, vel: 55 }),
+    m("motif·2", 4, [60, 57, 55, 53, 52, 53, 55, 57], { vel: 70 }),
+    c("drone", 4, 0, { vel: 55 }),
+    m("motif·3", 4, [57, 55, 53, 52, 50, 52, 53, 55], { oct: 2, vel: 80, cc: { air: 105 } }),
+    c("drone", 6, 0, { gate: 0.99, vel: 50 }),
+    c("amen",  4, 0, { gate: 0.99, vel: 45, cc: { air: 60, envelope: 125, velocity: 45 } }),
+  ],
+};
 
-  { title: "Beethoven — Moonlight Sonata 1st mvt", composer: "Beethoven", year: 1801,
-    bpm: 60,  mode: "minor", pattern: "up",     rate: "1/8T",
-    chords: [0,5,3,4,0,3,4,0] },                                  // i VI iv V i iv V i
+// 15 — Tavener The Lamb — modal melody in C major, sacred, parallel motion
+const TAVENER_LAMB = {
+  title: "Tavener — The Lamb", subtitle: "John Tavener · 1982 · sacred · C major",
+  bpm: 64, key: "C", mode: "major",
+  scenes: [
+    c("intro", 2, 0, { bpm: 64, vel: 55, cc: { ..._baseCC, air: 70, velocity: 55 }, chaos: 0 }),
+    // Modal melody: "Lit-tle Lamb, who made thee?" — gentle stepwise phrasing
+    m("verse·1", 4, [60, 59, 60, 59, 57, 55, 57, 55, 53, 52, 53, 55, 53, 52, 50, 48], { rate: "1/4", vel: 70, gate: 0.85, cc: { air: 65 } }),
+    c("V",  2, 4), c("I",  2, 0),
+    m("verse·2", 4, [60, 59, 57, 55, 57, 55, 53, 52, 53, 55, 53, 52, 50, 52, 53, 50], { vel: 75 }),
+    c("vi", 2, 5), c("IV", 2, 3),
+    m("amen·mel", 4, [55, 53, 52, 50, 52, 53, 55, 57, 55, 53, 52, 50, 48, 50, 52, 48], { vel: 70 }),
+    c("end", 4, 0, { gate: 0.99, vel: 55, cc: { air: 50, envelope: 120, velocity: 55 } }),
+  ],
+};
 
-  { title: "Beethoven — Für Elise",      composer: "Beethoven",  year: 1810,
-    bpm: 84,  mode: "minor", pattern: "up",     rate: "1/8",
-    chords: [0,4,0,4,0,5,2,6,0,4,0] },
+// 16 — Hildegard von Bingen O Virtus Sapientiae — modal chant (Dorian-ish)
+const HILDEGARD_VIRTUS = {
+  title: "Hildegard — O Virtus Sapientiae", subtitle: "Hildegard von Bingen · ~1150 · Dorian chant",
+  bpm: 56, key: "A", mode: "minor",  // A minor / Aeolian fits the modal feel
+  scenes: [
+    rest(1, { air: 100 }),
+    // Single-line chant — modal melismatic phrasing, slow stepwise motion
+    m("verse·1", 4, [57, 59, 57, 55, 53, 52, 53, 55], { bpm: 56, rate: "1/4", oct: 1, vel: 65, gate: 0.85, cc: { ..._baseCC, air: 95, envelope: 110, velocity: 65 }, chaos: 0 }),
+    m("verse·2", 4, [57, 55, 57, 60, 57, 55, 53, 52]),
+    rest(1, { air: 100 }),
+    m("verse·3", 4, [57, 55, 53, 52, 50, 52, 53, 55]),
+    m("verse·4", 4, [55, 53, 52, 50, 48, 50, 52, 55], { vel: 70 }),
+    rest(1, { air: 90 }),
+    m("verse·5", 4, [57, 60, 59, 57, 55, 53, 52, 53], { vel: 70 }),
+    m("amen·mel", 4, [55, 53, 52, 50, 48, 47, 48, 50]),
+    c("end", 4, 0, { gate: 0.99, vel: 55, cc: { air: 70, envelope: 120, velocity: 55 } }),
+  ],
+};
 
-  { title: "Beethoven — Symphony No. 5", composer: "Beethoven",  year: 1808,
-    bpm: 96,  mode: "minor", pattern: "down",   rate: "1/16",
-    chords: [0,0,5,4,0,0,5,4,0] },                                // the iconic motif
+// 17 — Allegri Miserere — Renaissance polyphony reduced to chord sequence + chant melody
+const ALLEGRI_MISERERE = {
+  title: "Allegri — Miserere mei, Deus", subtitle: "Allegri · 1638 · Renaissance · A minor",
+  bpm: 56, key: "A", mode: "minor",
+  scenes: [
+    c("intro", 2, 0, { bpm: 56, vel: 55, gate: 0.99, cc: { ..._baseCC, air: 80, velocity: 55 }, chaos: 0 }),
+    // Chant motion — repeated syllabic on tonic, descend, return
+    m("chant·1", 4, [57, 57, 57, 55, 53, 55, 57, 55], { rate: "1/4", vel: 65, gate: 0.85 }),
+    c("VII", 2, 6), c("i", 2, 0),
+    m("chant·2", 4, [55, 55, 53, 52, 50, 52, 53, 55]),
+    c("VI",  2, 5), c("V", 2, 4),
+    m("verse·high", 4, [60, 60, 59, 57, 55, 53, 52, 50], { oct: 1, vel: 75, cc: { air: 90 } }),
+    c("i",   2, 0),
+    m("amen·mel", 4, [55, 53, 52, 50, 48, 50, 48, 47], { vel: 60 }),
+    c("end", 4, 0, { gate: 0.99, vel: 50, cc: { air: 50, envelope: 122, velocity: 50 } }),
+  ],
+};
 
-  { title: "Albinoni — Adagio in G minor", composer: "Albinoni / Giazotto", year: 1958,
-    bpm: 50,  mode: "minor", pattern: "chord",  rate: "1/4",
-    chords: [0,5,2,6,0,4,0,3,4,0] },                              // i VI III VII i V i iv V i
+// 18 — Górecki Symphony No. 3 (Sorrowful Songs), 1st mvt — slow modal canon
+const GORECKI_SYM3 = {
+  title: "Górecki — Symphony of Sorrowful Songs", subtitle: "Henryk Górecki · 1976 · A minor",
+  bpm: 50, key: "A", mode: "minor",
+  scenes: [
+    rest(1, { air: 105 }),
+    // Slow modal melody, building
+    m("phrase·1", 6, [48, 50, 52, 53, 55, 53, 52, 50, 48, 50, 52, 50], { bpm: 50, rate: "1/4", oct: 1, vel: 55, gate: 0.9, cc: { ..._baseCC, air: 90, envelope: 120, velocity: 55 }, chaos: 0 }),
+    m("phrase·2", 6, [50, 52, 53, 55, 57, 55, 53, 52, 50, 52, 53, 50], { vel: 65 }),
+    m("phrase·3", 6, [52, 53, 55, 57, 59, 57, 55, 53, 52, 53, 55, 52], { oct: 2, vel: 75, cc: { air: 100 } }),
+    m("phrase·4·peak", 4, [60, 59, 57, 55, 57, 55, 53, 52, 50, 48, 50, 53, 55, 53, 52, 50], { oct: 2, vel: 85, cc: { air: 115 } }),
+    c("descend", 4, 0, { gate: 0.99, vel: 60, cc: { air: 80, envelope: 125 } }),
+    c("end", 4, 0, { gate: 0.99, vel: 45, cc: { air: 50, envelope: 127, velocity: 45 } }),
+  ],
+};
+
+// 19 — Pachelbel Chaconne in F minor — organ ostinato variations (transposed to A minor)
+const PACHELBEL_CHACONNE = {
+  title: "Pachelbel — Chaconne in F minor", subtitle: "Pachelbel · 1693 · organ · A minor",
+  bpm: 70, key: "A", mode: "minor",
+  scenes: [
+    // 4-bar bass ostinato: descending tetrachord A-G-F-E (chromatic feel reduced to diatonic)
+    m("bass·alone", 4, [57, 55, 53, 52], { bpm: 70, rate: "1/4", oct: 1, vel: 75, gate: 0.85, cc: { ..._baseCC, air: 60, envelope: 100, velocity: 75 }, chaos: 0 }),
+    // Variations layer chord pads on the ostinato
+    c("var·1·i",  1, 0, { gate: 0.95 }), c("var·1·VII", 1, 6), c("var·1·VI", 1, 5), c("var·1·V", 1, 4),
+    c("var·2·i",  1, 0, { vel: 85, oct: 2, cc: { air: 75 } }), c("var·2·VII", 1, 6), c("var·2·VI", 1, 5), c("var·2·V", 1, 4),
+    // Melodic variation
+    m("var·3·mel", 4, [60, 59, 57, 55, 53, 55, 57, 60, 57, 55, 53, 52, 50, 52, 53, 55], { rate: "1/8", vel: 90, gate: 0.6, cc: { air: 85 } }),
+    c("var·4·i",  2, 0, { oct: 2, vel: 95 }),
+    c("var·4·V",  2, 4, { oct: 2 }),
+    c("end", 4, 0, { gate: 0.99, vel: 65, cc: { air: 35, envelope: 115, velocity: 65 } }),
+  ],
+};
+
+// 20 — Terry Riley In C — pure C major, just rhythmic patterns over the tonic
+const RILEY_IN_C = {
+  title: "Riley — In C", subtitle: "Terry Riley · 1964 · minimalist · C major drone",
+  bpm: 120, key: "C", mode: "major",
+  scenes: [
+    // The whole piece is in C; players choose from 53 cells. We approximate
+    // with rhythmic variations over a continuous C-major drone.
+    c("pulse·intro", 4, 0, { bpm: 120, rate: "1/8", gate: 0.6, vel: 70, cc: { ..._baseCC, air: 60, velocity: 70 }, chaos: 0.04 }),
+    // Cell 1: short ascending pattern (E E F G)
+    m("cell·1", 4, [52, 52, 53, 55], { rate: "1/8", vel: 80, gate: 0.55 }),
+    // Cell 2: held G then turn (G A G E)
+    m("cell·2", 4, [55, 57, 55, 52], { vel: 85 }),
+    // Cell 3: rising fifths-feel (C E G C)
+    m("cell·3", 4, [48, 52, 55, 60], { vel: 90, cc: { air: 75 } }),
+    // Cell 4: descending pattern with octave (C E G E C E G E)
+    m("cell·4", 4, [60, 55, 52, 48, 60, 55, 52, 48], { oct: 2, vel: 95, cc: { air: 85 } }),
+    // Cell 5: pulse on E
+    m("cell·5", 4, [52, 52, 52, 55, 52, 52, 52, 53], { vel: 95, gate: 0.45 }),
+    // Sustained close
+    c("hold·I", 4, 0, { rate: "1/4", gate: 0.99, vel: 70, cc: { air: 70, envelope: 115 } }),
+    c("amen",   4, 0, { gate: 0.99, vel: 55, cc: { air: 35, envelope: 125, velocity: 55 } }),
+  ],
+};
+
+export const CLASSICAL_SONGS = [
+  PACHELBEL_CANON,
+  PACHELBEL_CHACONNE,
+  BACH_AIR,
+  BACH_JESU_JOY,
+  BACH_TOCCATA,
+  BACH_PASSACAGLIA,
+  BACH_CELLO_PRELUDE,
+  SCHUBERT_AVE_MARIA,
+  SATIE_GYM_1,
+  ALBINONI_ADAGIO,
+  ORFF_O_FORTUNA,
+  PART_SPIEGEL,
+  PART_FUR_ALINA,
+  PART_CANTUS,
+  PART_FRATRES,
+  TAVENER_LAMB,
+  HILDEGARD_VIRTUS,
+  ALLEGRI_MISERERE,
+  GORECKI_SYM3,
+  RILEY_IN_C,
 ];
-
-// Generator: turn a CLASSICAL row into a full song with intro / build passes /
-// outro. Picks enough loops to keep total duration in the [75s, 150s] range.
-function classicalToSong(p) {
-  const key      = p.mode === "minor" ? "A" : "C";
-  const cycleLen = p.chords.length;
-  const introBars = 2, outroBars = 4;
-
-  // pick loops such that intro + cycle*loops + outro lands ~75-150 sec
-  const beatsPerSec = p.bpm / 60;
-  const totalBars = (sec) => sec * beatsPerSec / 4;
-  let loops = 2;
-  while (loops < 6) {
-    const bars = introBars + cycleLen * loops + outroBars;
-    if (bars >= totalBars(75)) break;
-    loops++;
-  }
-
-  const baseGate = p.pattern === "chord" ? 0.95 : 0.55;
-  const baseScene = {
-    pattern: p.pattern, rate: p.rate, octaves: 1, gate: baseGate, swing: 0,
-    cc: { air: 35, modDepth: 8, modRate: 30, envelope: 80 }, chaos: 0,
-  };
-
-  const scenes = [];
-  // Intro: first chord, lower velocity, half octaves
-  scenes.push({ name: "intro", bars: introBars, chord: p.chords[0], bpm: p.bpm,
-    ...baseScene, velocity: 65, cc: { ...baseScene.cc, velocity: 65 } });
-
-  // Pass 1..N: cycle through chords, building octaves & velocity each pass
-  for (let pass = 0; pass < loops; pass++) {
-    const oct = Math.min(1 + pass, 3);
-    const vel = Math.min(75 + pass * 12, 115);
-    const passCcAir = Math.min(40 + pass * 18, 95);
-    for (let i = 0; i < p.chords.length; i++) {
-      const sc = { name: `${pass + 1}·${i + 1}`, bars: 1, chord: p.chords[i] };
-      if (i === 0) {
-        // First scene of each pass updates octaves/velocity/AIR.
-        sc.octaves = oct;
-        sc.velocity = vel;
-        sc.cc = { air: passCcAir, envelope: 80 + pass * 5, velocity: vel };
-      }
-      scenes.push(sc);
-    }
-  }
-
-  // Outro: held tonic with chord pattern at 1/4, long gate
-  scenes.push({ name: "outro", bars: outroBars, chord: p.chords[0],
-    pattern: "chord", rate: "1/4", octaves: 1, gate: 0.99, velocity: 60,
-    cc: { air: 25, envelope: 100, velocity: 60 } });
-
-  return {
-    title: p.title,
-    subtitle: `${p.composer} · ${p.year} · transposed to ${key} ${p.mode}`,
-    bpm: p.bpm,
-    key, mode: p.mode,
-    scenes,
-  };
-}
-
-export const CLASSICAL_SONGS = CLASSICAL.map(classicalToSong);
 
 export const SONGS = [
   TINES_AND_TIME,

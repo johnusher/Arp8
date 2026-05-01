@@ -33,7 +33,14 @@ Press SONG and ARP8 plays a complete generative composition. The transport has a
 
 All eight are written for the default phase8 install (C major C3-C4). The minor-key songs run in A minor and the modal piece in D Dorian — both share the C-major scale notes so every chord lands on installed tines.
 
-Cycle past these eight and you reach a **classical catalogue of 20 pieces** — Pachelbel, Bach (Air on the G String, Jesu Joy, Cello Suite Prelude, Minuet in G, Invention No. 1, Sheep May Safely Graze), Handel (Hallelujah, Sarabande), Mozart (Eine kleine Nachtmusik, K. 545), Vivaldi (Spring), Beethoven (Ode to Joy, Moonlight Sonata 1st mvt, Für Elise, Symphony No. 5), Schubert (Ave Maria), Satie (Gymnopédie No. 1), Debussy (Clair de Lune), Albinoni (Adagio in G minor). All transposed to C major or A minor so they fit the default install. Each is data-driven from a tiny metadata row (composer, BPM, mode, pattern, chord-degree progression) and expanded by `classicalToSong()` into a full intro / build-passes / outro arrangement; they're not literal transcriptions, just the recognisable chord skeleton driven through the arpeggiator.
+Cycle past these eight and you reach the **sacred / organ / drone catalogue** — 20 hand-arranged pieces leaning into the phase8's strengths (sustained tones, modal harmony, slow-evolving texture). Most are **played as actual melodies**, not just rolled chord arps — the engine's `pattern: "played"` mode plays explicit MIDI note sequences in order, so you hear melodic lines instead of broken chords:
+
+- **Organ icons.** Bach Toccata in D minor (BWV 565), Bach Passacaglia in C minor (BWV 582), Pachelbel Chaconne in F minor, Bach Cello Suite No. 1 Prelude.
+- **Sacred & choral.** Bach Jesu, Joy of Man's Desiring · Schubert Ave Maria · Allegri Miserere mei, Deus · Tavener The Lamb · Hildegard von Bingen O Virtus Sapientiae (~1150 medieval chant).
+- **Pärt tintinnabuli.** Spiegel im Spiegel · Für Alina · Cantus in Memoriam Britten · Fratres — slow, sparse, drone-based.
+- **Special / atmospheric.** Pachelbel Canon (with melodic variations) · Bach Air on the G String · Satie Gymnopédie No. 1 · Albinoni Adagio in G minor · Carl Orff "O Fortuna" (with the iconic chord stabs and chant) · Górecki Symphony of Sorrowful Songs · Terry Riley In C (minimalist drone).
+
+All transposed to C major (or A minor for the modal/minor pieces) so every note lands on an installed C-major C3-C4 resonator. Compositions are in [`src/song.js`](src/song.js) — each is hand-authored as a sequence of `c()` (chord-pad) and `m()` (played-melody) scenes, with `rest()` for silences.
 
 **What the engine drives during a song**
 

@@ -25,9 +25,10 @@ export const tests = [
     // First 8 are the originals (in known order)
     assert.equal(SONGS[0].title, "Tines & Time");
     assert.equal(SONGS[7].title, "Choral");
-    // Position 8 onwards are classical pieces (subtitle includes composer · year)
+    // Position 8 onwards are classical pieces (subtitle includes composer · year).
+    // Allow ~ prefix for approximate medieval dates (e.g. "~1150").
     for (let i = 8; i < SONGS.length; i++) {
-      assert.match(SONGS[i].subtitle, /·\s+\d{4}\s+·/, `${SONGS[i].title} subtitle missing year`);
+      assert.match(SONGS[i].subtitle, /·\s+~?\d{4}\s+·/, `${SONGS[i].title} subtitle missing year`);
     }
   }],
 
