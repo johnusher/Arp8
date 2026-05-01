@@ -2,6 +2,8 @@
 
 A web-based MIDI arpeggiator for the [Korg phase8](https://www.korg.com/us/products/dj/phase8/) acoustic synthesizer. Runs in Chrome on macOS via the Web MIDI API — no installer, no patching, no DAW.
 
+**Live: https://johnusher.github.io/Arp8/** — open in Chrome, allow MIDI, plug in your phase8.
+
 ![ARP8 main UI](docs/hero.png)
 
 ## What it is
@@ -80,15 +82,23 @@ The visual language is industrial / Berlin / Korg-Berlin. Deep concrete bg, brus
 
 ## Quickstart
 
+The easiest way: **open https://johnusher.github.io/Arp8/ in Chrome.** That's the live version of `main`. You'll be prompted for MIDI access; allow it and plug in your phase8.
+
+To run locally instead (for hacking on the source):
+
 ```bash
 git clone git@github.com:johnusher/Arp8.git
 cd Arp8
 npm run serve     # http://localhost:8080
 ```
 
-Open in **Chrome or Edge** on macOS. (Safari and Firefox don't ship Web MIDI as of 2026.) Plug in your phase8, allow the MIDI permission prompt, click a chord pad.
+If you don't have a phase8: append `?demo` to either URL to see the UI populated with mock state.
 
-If you don't have a phase8: append `?demo` to the URL to see the UI populated with mock state.
+### Single repo, single source of truth
+
+There is exactly one repo (this one) and one branch that matters (`main`). Every push to `main` triggers `.github/workflows/pages.yml`, which runs the full 80-test suite and — if it passes — deploys the working tree as-is to GitHub Pages. There is no separate "live" repo, no build artifact to commit, no manual deploy step. The site is the source.
+
+Browser support: **Chrome / Chromium / Edge / Brave**. Safari and Firefox don't ship Web MIDI as of 2026.
 
 ## Retuning your phase8
 
