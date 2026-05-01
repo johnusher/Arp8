@@ -13,7 +13,10 @@ export class MidiBridge {
     if (!navigator.requestMIDIAccess) {
       throw new Error("Web MIDI not supported in this browser. Try Chrome / Edge / Opera on macOS.");
     }
-    this.access = await navigator.requestMIDIAccess({ sysex: false });
+    // Chrome (2026) deprecates passing { sysex: false } — the permission prompt
+    // is now mandatory regardless of sysex, so omitting the options object
+    // suppresses the warning. Sysex defaults to false anyway.
+    this.access = await navigator.requestMIDIAccess();
     this._refresh();
     this.access.onstatechange = () => {
       this._refresh();
