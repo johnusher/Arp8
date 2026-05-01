@@ -92,9 +92,15 @@ export function pitchToSlotMidi(pitch, tines, mode) {
   if (mode === "frequency") return pitch;
   const base = PHASE8_MODE_BASE[mode];
   if (base === undefined) return pitch;
-  const idx = tines.indexOf(pitch);
-  if (idx < 0) return pitch; // no slot installed at this pitch — let it through
-  return base + idx;
+  // First snap pitch onto the nearest tine (preserves note class). Then look up
+  // the slot index. This makes octave-stacked arps work: a C5 from octaves=2
+  // becomes the C4 tine slot rather than passing through as MIDI 72 which the
+  // synth's STATIC firmware ignores. The hardware constraint (one octave of
+  // resonators on a default install) means stacking just revisits tines —
+  // you don't actually get higher pitches without installing higher resonators.
+  const snapped = snapToTines(pitch, tines);
+  const idx = tines.indexOf(snapped);
+  return idx < 0 ? pitch : base + idx;
 }
 
 // Snap a midi note to the available tines. Preserves note class (pitch letter)
