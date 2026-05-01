@@ -60,6 +60,11 @@ export class MidiBridge {
     return o?.port;
   }
 
+  // Send a Control Change message. CC numbers per phase8 manual §12.0.
+  sendCC = (ccNum, value, channel = 0, time = 0) => {
+    this.send([0xb0 | (channel & 0x0f), ccNum & 0x7f, value & 0x7f], time);
+  };
+
   // Panic: send all-notes-off and all-sound-off on every channel.
   panic() {
     const out = this._currentPort();

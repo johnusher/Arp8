@@ -6,6 +6,7 @@ import {
   diatonicChords, phase8Tines, snapChord, midiOf, nameOf, NOTE_NAMES,
   pitchToSlotMidi,
 } from "./chords.js";
+import { TINES_AND_TIME, SongPlayer } from "./song.js";
 
 // ───── State ────────────────────────────────────────────────────────────────
 const state = {
@@ -224,6 +225,7 @@ function releaseChord() {
 chordPadsEl.addEventListener("mousedown", (e) => {
   const pad = e.target.closest(".pad");
   if (!pad) return;
+  if (state.songPlaying) stopSong();
   const idx = Number(pad.dataset.idx);
   state.pressedPadId = idx;
   setArmedChord(idx, true);
@@ -413,6 +415,12 @@ function stopSched() {
   playBtn.classList.remove("armed");
   $("np-note").textContent = "—";
   for (const t of tinesEl.children) t.classList.remove("active");
+  if (state.songPlaying) {
+    songPlayer.stop();
+    state.songPlaying = false;
+    songBtn.classList.remove("armed");
+    $("np-chord").textContent = "—";
+  }
 }
 
 playBtn.addEventListener("click", () => {
@@ -435,6 +443,100 @@ $("btn-test").addEventListener("click", () => {
   sendToPhase8([0x80 | ch, pitch, 0],   now + 400);
   flashTines([pitch]);
   $("np-note").textContent = nameOf(pitch);
+});
+
+// ───── Song player ──────────────────────────────────────────────────────────
+const songBtn = $("btn-song");
+
+function getChordForSong(idx) {
+  if (idx === undefined || idx === null) return [];
+  const root3 = midiOf(state.key, 3);
+  const chords = diatonicChords(root3, state.mode);
+  if (!chords[idx]) return [];
+  const raw = chords[idx].notes;
+  return state.snap ? snapChord(raw, state.tines) : raw;
+}
+
+function sendCCToPhase8(ccNum, value) {
+  sendToPhase8([0xb0 | (state.channel & 0x0f), ccNum & 0x7f, value & 0x7f], performance.now());
+}
+
+function highlightChordPad(idx) {
+  for (const p of chordPadsEl.children) p.classList.remove("armed");
+  if (idx === undefined || idx === null) return;
+  const pad = chordPadsEl.children[idx];
+  if (pad) pad.classList.add("armed");
+}
+
+function applySongScene(params) {
+  // Push pattern / rate / octaves / gate / swing / velocity / bpm into the engine + UI.
+  if (params.pattern  !== undefined) { setPattern(params.pattern); }
+  if (params.rate     !== undefined) { state.rate = params.rate;            sched.setRate(params.rate);     $("v-rate").textContent  = params.rate; }
+  if (params.octaves  !== undefined) { state.octaves = params.octaves;      arp.setOctaves(params.octaves); $("v-oct").textContent   = `${params.octaves}`; }
+  if (params.gate     !== undefined) { state.gate = params.gate;            sched.setGate(params.gate);     $("v-gate").textContent  = `${Math.round(params.gate * 100)}%`; }
+  if (params.swing    !== undefined) { state.swing = params.swing;          sched.setSwing(params.swing);   $("v-swing").textContent = `${Math.round(params.swing * 100)}%`; }
+  if (params.velocity !== undefined) { state.velocity = params.velocity;    sched.setVelocity(params.velocity); $("v-vel").textContent = `${params.velocity}`; }
+  if (params.bpm      !== undefined) { setBpm(params.bpm); }
+
+  // Chord: explicit notes (Cage / pause) overrides diatonic chord lookup.
+  arp.setChord(params.notes);
+  if (params.notes && params.notes.length > 0) {
+    flashTines(params.notes);
+  }
+
+  // Highlight the corresponding diatonic chord pad if this scene uses one.
+  if (params.chord !== undefined && (!params.notes || params.notes.length > 1)) {
+    highlightChordPad(params.chord);
+  } else {
+    highlightChordPad(null);
+  }
+}
+
+const songPlayer = new SongPlayer({
+  song: TINES_AND_TIME,
+  getChord: getChordForSong,
+  applyScene: applySongScene,
+  sendCC: sendCCToPhase8,
+  onScene: (params, idx, total) => {
+    $("np-chord").textContent = `♫ ${TINES_AND_TIME.title} — ${params.name} (${idx + 1}/${total})`;
+    $("np-note").textContent  = params.notes && params.notes.length === 1
+      ? nameOf(params.notes[0])
+      : params.notes && params.notes.length === 0
+        ? "—"
+        : params.notes
+          ? `${params.notes.length} ♪`
+          : "—";
+  },
+  onEnd: () => {
+    songBtn.classList.remove("armed");
+    state.songPlaying = false;
+    stopSched();
+    $("np-chord").textContent = "—";
+  },
+});
+
+state.songPlaying = false;
+
+function startSong() {
+  if (state.songPlaying) return;
+  if (sched.running) stopSched();
+  // Start scheduler with the first scene's BPM placeholder (will be overridden immediately).
+  arp.setChord([]); // no chord until first scene fires
+  startSched();
+  state.songPlaying = true;
+  songBtn.classList.add("armed");
+  songPlayer.play();
+}
+function stopSong() {
+  songPlayer.stop();
+  state.songPlaying = false;
+  songBtn.classList.remove("armed");
+  midi.panic();
+  for (const t of tinesEl.children) t.classList.remove("active");
+  $("np-chord").textContent = "—";
+}
+songBtn.addEventListener("click", () => {
+  if (state.songPlaying) stopSong(); else startSong();
 });
 
 // ───── Keyboard shortcuts ───────────────────────────────────────────────────
@@ -468,20 +570,30 @@ function applyDemo() {
   midiStatus.classList.add("ok");
   $("midi-log").textContent = "midi: phase8 out ch1 ON  C2 v100  (#42)";
   setPattern(params.get("pattern") || "updown");
-  // arm IV (F major) by default — looks good with the brass/amber palette
   const padIdx = Number(params.get("chord") ?? 3);
   setTimeout(() => {
+    if (params.has("song")) {
+      // Fake the song-playing visual state for screenshots.
+      songBtn.classList.add("armed");
+      $("np-chord").textContent = "♫ Tines & Time — chorus·a (15/26)";
+      $("np-note").textContent  = "A3";
+      $("midi-log").textContent = "midi: phase8 out ch1 CC  AIR=105  (#341)";
+      const pad = chordPadsEl.children[5]; // vi armed
+      if (pad) pad.classList.add("armed");
+      // Light all 8 tines for the chorus
+      for (const t of tinesEl.children) t.classList.add("active");
+      stepsEl.children[8]?.classList.add("playing");
+      return;
+    }
     const pad = chordPadsEl.children[padIdx];
     if (pad) pad.classList.add("armed");
     $("np-chord").textContent = pad?.dataset.label ?? "";
-    $("np-note").textContent = pad ? nameOf(Number(pad.dataset.notes.split(",")[0])) : "—";
-    // Light a couple of tines so the screenshot isn't dead
+    $("np-note").textContent  = pad ? nameOf(Number(pad.dataset.notes.split(",")[0])) : "—";
     const lit = pad ? pad.dataset.notes.split(",").map(Number).slice(0, 1) : [];
     for (const n of lit) {
       const el = tinesEl.querySelector(`.tine[data-midi="${n}"]`);
       if (el) el.classList.add("active");
     }
-    // Light step 5 as if mid-arp
     stepsEl.children[4]?.classList.add("playing");
   }, 50);
   return true;

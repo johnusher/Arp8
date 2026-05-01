@@ -12,6 +12,32 @@ It's built around the assumption that you're a music novice (chord pads labelled
 
 ![Chord pattern detail](docs/chords-detail.png)
 
+## The SONG button — "Tines & Time"
+
+![SONG mode playing the bundled composition](docs/song-playing.png)
+
+Press SONG and ARP8 plays a 2-minute generative composition I wrote called *Tines & Time*. It's a single-take demonstration of every CC the phase8 exposes (per manual §12.0):
+
+- **AIR slider** (CC 30) opens scene by scene — tight + dry intro, half-open verses, fully-open chorus near feedback territory, then exhales for the outro
+- **Mod Depth / Mod Rate** (CC 28/29) swell from settled in the verses to full psychedelic shimmer in the bridge
+- **Envelope per resonator** (CC 20–27) and **Velocity per resonator** (CC 12–19) get broadcast at scene boundaries, with a small per-slot random offset so the eight tines never behave identically
+
+**Structure**
+1. Intro (88 BPM, soft) — settles into C major
+2. Verse 1 (88 BPM) — classic I-V-vi axis pattern, simple up arp
+3. Sudden 1-bar **pause** — silence between verses
+4. Verse 2 (88 BPM) — same chords lifted to two octaves with updown
+5. Pre-chorus (88 BPM) — converge/diverge patterns build tension
+6. **Chorus** (105 BPM **tempo lift**) — vi-IV-I-V uplift, 3 octaves, AIR near max
+7. **Cage interlude** — slows to 60 BPM, then 30 BPM (almost stopped). Single tines repeat hypnotically: just C3, then just G3, then a single C4 at near-standstill, then total silence
+8. **Bridge** (78 BPM) — Pachelbel descent (vi-iii-IV) with full chaos (`chaos: 0.65` random-walks AIR + Mod CCs every beat — this is where it gets weird)
+9. **Burst** (140 BPM **sudden climax**) — single bar of full-chord stab at velocity 127
+10. Outro — decelerates 80 → 65 → 50 BPM, ending on a held I
+
+Each scene specifies pattern, rate, octaves, gate, swing, velocity, BPM, and a CC payload. A `chaos` value (0–1) controls how much the player random-walks the global CCs every beat — set to 0 in the verses (stable timbre), spiked to 0.65 in the bridge (textural breakdown). The whole composition is in [`src/song.js`](src/song.js); the engine is [`SongPlayer`](src/song.js) and is fully unit-tested with the same virtual-clock harness as the arp scheduler.
+
+The song forces phase8-friendly diatonic chords from the *current* key/scale, so you can press SONG in any key, but it was written for the default C major C3-C4 install.
+
 ## Inspirations
 
 The visual language is industrial / Berlin / Korg-Berlin. Deep concrete bg, brushed-steel panels, brass tine resonators, amber phosphor for the screens. A mix of:
@@ -23,9 +49,11 @@ The visual language is industrial / Berlin / Korg-Berlin. Deep concrete bg, brus
 - **Ableton Live's Arpeggiator.** Its pattern library is the canonical one — Up, Down, UpDown, Converge, Diverge, Played, Random, Random-Other, Random-Once, plus a "Chord" pattern that fires every note simultaneously. ARP8 implements all of them.
 - **Vintage gear amber displays.** The BPM screen, knob value readouts, and now-playing readout are all glowing amber on near-black, with subtle phosphor bloom.
 - **Berlin-techno colour-coded clip launchers.** The seven diatonic chord pads each take a colour from a curated nine-stop palette so a chord progression becomes a visual phrase.
+- **John Cage's prepared-piano sonatas** — single-tine repetition, sudden tempo shifts, near-silence bordered by sudden bursts. The "Cage interlude" in the bundled song crashes the BPM from 105 to 30 with one tine hammering, then pauses to nothing, then explodes at 140.
 
 ## Features
 
+- **SONG button** — plays *Tines & Time*, a 2-minute composition with full CC automation, tempo dynamics, pauses, and a Cage-style single-tine interlude (see above)
 - **11 arpeggiator patterns** including all the Ableton standards
 - **7 rates** from 1/4 down to 1/32, plus 1/4T, 1/8T, 1/16T triplets
 - **Octave stacking** 1×–4×
@@ -90,7 +118,9 @@ src/chords.js                 — note theory, diatonic chord generator, snap-to
 src/arp.js                    — pattern engine (Up / Down / UpDown / Converge / Diverge / Random*3 / Played / Chord)
 src/scheduler.js              — Chris-Wilson-style lookahead scheduler (25 ms tick, 100 ms ahead),
                                 clock and sender are injectable so it tests headlessly
-src/midi.js                   — Web MIDI bridge (device list, panic, send-with-log)
+src/song.js                   — "Tines & Time" composition + SongPlayer; per-scene BPM, explicit
+                                notes for pauses & Cage repetition, phase8 CC table, chaos jitter
+src/midi.js                   — Web MIDI bridge (device list, panic, sendCC, send-with-log)
 src/app.js                    — UI controller; knobs, chord pads, tine animations, keyboard
 serve.js                      — 30-line static-file server
 ```
@@ -103,7 +133,7 @@ The engine modules know nothing about the DOM or about Web MIDI. The scheduler t
 npm test
 ```
 
-57 tests across 7 suites:
+72 tests across 8 suites:
 
 - **syntax** — `node --check` every `src/*.js`, plus an import-resolution sanity test for `src/midi.js` (which the unit tests don't otherwise touch)
 - **chords** — note theory, diatonic chord generation in major / minor, `snapToTines` correctness including the note-class-preservation rule
@@ -112,6 +142,7 @@ npm test
 - **integration** — full pipeline from chord pad to wire bytes
 - **flow** — multi-bar progressions, latch behaviour, panic semantics
 - **phase8 mode** — STATIC / FREQUENCY / TRANSPOSED translation tables
+- **song** — composition shape (BPM variation, pauses, Cage scenes), scene timing under variable BPM, CC payload structure, chaos behaviour with seeded RNG
 
 ## Browser support
 
